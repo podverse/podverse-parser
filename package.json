@@ -1,0 +1,38 @@
+{
+  "name": "podverse-parser",
+  "version": "1.0.0",
+  "description": "The RSS parser system for podverse-parser",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "nodemon --watch ./src -x \"npm run build\"",
+    "build": "esbuild src/index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js",
+    "lint": "eslint ./src --ext .ts",
+    "lint-fix": "eslint --fix"
+  },
+  "files": [
+    "/dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/podverse/podverse-parser.git"
+  },
+  "license": "AGPLv3",
+  "bugs": {
+    "url": "https://github.com/podverse/podverse-parser/issues"
+  },
+  "homepage": "https://github.com/podverse/podverse-parser#readme",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "esbuild": "^0.19.8",
+    "eslint": "^8.54.0",
+    "nodemon": "^3.0.2",
+    "typescript": "^5.3.2"
+  },
+  "dependencies": {
+    "aws-sdk": "2.814.0",
+    "podverse-shared": "^4.15.2",
+    "request-promise-native": "1.0.8"
+  }
+}
