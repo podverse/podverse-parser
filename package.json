@@ -8,7 +8,8 @@
     "dev": "nodemon --watch ./src -x \"npm run build\"",
     "build": "esbuild src/index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js",
     "lint": "eslint ./src --ext .ts",
-    "lint-fix": "eslint --fix"
+    "lint-fix": "eslint --fix",
+    "prepare": "npm run build"
   },
   "files": [
     "/dist"
@@ -32,7 +33,9 @@
   },
   "dependencies": {
     "aws-sdk": "2.814.0",
+    "axios": "^1.6.2",
     "podverse-shared": "^4.15.2",
-    "request-promise-native": "1.0.8"
+    "request-promise-native": "1.0.8",
+    "sharp": "^0.33.0"
   }
 }

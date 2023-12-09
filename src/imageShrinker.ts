@@ -1,9 +1,8 @@
-import * as request from 'request-promise-native'
+import request from 'axios'
+import { convertToSlug } from 'podverse-shared'
+import { s3 } from './aws'
 import { config } from './config'
-import { convertToSlug } from './lib/utility'
-import { s3 } from '~/services/aws'
-
-const sharp = require('sharp')
+import sharp from 'sharp'
 
 const { awsConfig, shrunkImageSize } = config
 const { imageCloudFrontOrigin, imageS3BucketName } = awsConfig
@@ -12,9 +11,12 @@ const { imageCloudFrontOrigin, imageS3BucketName } = awsConfig
 // shrinking the image, then PUTing it on our S3 bucket.
 export const shrinkImage = async (podcast: any) => {
   try {
-    const imgResponse = await request(podcast.imageUrl, {
-      timeout: 5000,
-      encoding: null
+    const imgResponse = await request({
+      method: 'GET',
+      responseEncoding: 'binary',
+      responseType: 'arraybuffer',
+      timeout: 15000,
+      url: podcast.imageUrl
     })
 
     const shrunkImage = await sharp(imgResponse).resize(shrunkImageSize).toFormat('jpg').toBuffer()
@@ -33,7 +35,7 @@ export const shrinkImage = async (podcast: any) => {
 
     const result = await s3.upload(s3Params).promise()
 
-    return imageCloudFrontOrigin + '/' + result.key
+    return imageCloudFrontOrigin + '/' + result.Key
   } catch (error) {
     console.log('Image saving failed')
     console.log('title', podcast.title)
