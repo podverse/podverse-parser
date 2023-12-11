@@ -1,5 +1,5 @@
 import aws from 'aws-sdk'
-import { config } from './config'
+import { config } from '../config'
 
 const { awsConfig } = config
 const awsRegion = awsConfig.region

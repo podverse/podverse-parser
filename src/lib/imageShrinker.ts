@@ -1,7 +1,7 @@
 import request from 'axios'
 import { convertToSlug } from 'podverse-shared'
 import { s3 } from './aws'
-import { config } from './config'
+import { config } from '../config'
 import sharp from 'sharp'
 
 const { awsConfig, shrunkImageSize } = config
@@ -19,7 +19,7 @@ export const shrinkImage = async (podcast: any) => {
       url: podcast.imageUrl
     })
 
-    const shrunkImage = await sharp(imgResponse).resize(shrunkImageSize).toFormat('jpg').toBuffer()
+    const shrunkImage = await sharp(imgResponse.data).resize(shrunkImageSize).toFormat('jpg').toBuffer()
 
     let slug = podcast.title ? convertToSlug(podcast.title) : 'image'
     slug = `${slug}-${Date.now()}`
@@ -36,7 +36,7 @@ export const shrinkImage = async (podcast: any) => {
     const result = await s3.upload(s3Params).promise()
 
     return imageCloudFrontOrigin + '/' + result.Key
-  } catch (error) {
+  } catch (error: any) {
     console.log('Image saving failed')
     console.log('title', podcast.title)
     console.log('imageUrl', podcast.imageUrl)

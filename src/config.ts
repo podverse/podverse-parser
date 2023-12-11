@@ -1,1 +1,4 @@
-export const config = {} as any
+// TODO: pass in config
+export const config = {
+  awsConfig: {}
+} as any

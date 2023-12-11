@@ -1,3 +1,4 @@
-export * from './aws'
 export * from './config'
-export * from './imageShrinker'
+export * from './lib/aws'
+export * from './lib/imageShrinker'
+export * from './services/index'

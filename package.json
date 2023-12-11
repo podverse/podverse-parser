@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "nodemon --watch ./src -x \"npm run build\"",
-    "build": "esbuild src/index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js",
+    "dev:watch": "nodemon --watch 'src' --watch $(realpath node_modules/podverse-orm) --watch $(realpath node_modules/podverse-shared) -x \"npm run build\"",
+    "build": "tsc",
     "lint": "eslint ./src --ext .ts",
     "lint-fix": "eslint --fix",
     "prepare": "npm run build"
@@ -24,9 +24,9 @@
   },
   "homepage": "https://github.com/podverse/podverse-parser#readme",
   "devDependencies": {
+    "@types/node": "^20.10.4",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
-    "esbuild": "^0.19.8",
     "eslint": "^8.54.0",
     "nodemon": "^3.0.2",
     "typescript": "^5.3.2"
@@ -34,8 +34,12 @@
   "dependencies": {
     "aws-sdk": "2.814.0",
     "axios": "^1.6.2",
+    "node-fetch": "^3.3.2",
+    "podcast-partytime": "^4.8.0",
+    "podverse-orm": "^1.0.0",
     "podverse-shared": "^4.15.2",
     "request-promise-native": "1.0.8",
-    "sharp": "^0.33.0"
+    "sharp": "0.32.6",
+    "typeorm": "0.2.45"
   }
 }
