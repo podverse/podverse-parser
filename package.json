@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev:watch": "nodemon --watch 'src' --watch $(realpath node_modules/podverse-orm) --watch $(realpath node_modules/podverse-shared) -x \"npm run build\"",
+    "dev:watch": "nodemon --watch 'src' --watch $(realpath node_modules/podverse-external-services) --watch $(realpath node_modules/podverse-orm) --watch $(realpath node_modules/podverse-shared) -x \"npm run build\"",
     "build": "tsc",
     "lint": "eslint ./src --ext .ts",
     "lint-fix": "eslint --fix",
@@ -36,6 +36,7 @@
     "axios": "^1.6.2",
     "node-fetch": "^3.3.2",
     "podcast-partytime": "^4.8.0",
+    "podverse-external-services": "^1.0.0",
     "podverse-orm": "^1.0.0",
     "podverse-shared": "^4.15.2",
     "request-promise-native": "1.0.8",

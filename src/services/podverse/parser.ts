@@ -31,10 +31,10 @@
 // } from 'podverse-shared'
 // import { Episode as PartytimeEpisode, FeedObject as PartytimeFeedObject } from 'podcast-partytime'
 // import { getRepository, In, Not } from 'typeorm'
-// import { config } from './config'
-// import { shrinkImage } from './imageShrinker'
-// import { partytimeInstance } from './factories/partytime'
-// import { podcastIndexAPIInstance } from './factories/podcastIndexAPI'
+// import { config } from '../../config'
+// import { partytimeInstance } from '../../factories/partytime'
+// import { podcastIndexAPIInstance } from '../../factories/podcastIndexAPI'
+// import { shrinkImage } from '../../lib/imageShrinker'
 // import { deleteMessage, receiveMessageFromQueue, sendMessageToQueue } from '~/services/queue'
 // import {
 //   sendLiveItemLiveDetectedNotification,
