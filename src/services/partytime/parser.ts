@@ -1,6 +1,6 @@
 import nodeFetch from 'node-fetch'
 import { parseFeed } from 'podcast-partytime'
-import { episodeCompat, liveItemCompatToEpisode, podcastCompat } from './compat'
+import { ParsedEpisode, ParsedLiveItem, ParsedPodcast, episodeCompat, podcastAndLiveItemCompat } from './compat'
 
 type AbortAPI = {
   abortController: AbortController
@@ -11,6 +11,12 @@ type Constructor = {
   userAgent: string
 }
 
+type ParsedFeedResponse = {
+  podcast: ParsedPodcast
+  episodes: ParsedEpisode[]
+  liveItems: ParsedLiveItem[]
+}
+
 export class PartytimeService  {
   declare userAgent: string
 
@@ -18,7 +24,7 @@ export class PartytimeService  {
     this.userAgent = userAgent
   }
   
-  parseFeed = async (url: string, abortAPI: AbortAPI) => {
+  parseFeed = async (url: string, abortAPI: AbortAPI): Promise<ParsedFeedResponse> => {
     try {
       const { abortController } = abortAPI
       const response = await nodeFetch(url, {
@@ -36,9 +42,8 @@ export class PartytimeService  {
           throw new Error('parseFeedUrl invalid partytime parser response')
         }
   
-        const podcast = podcastCompat(parsedFeed)
+        const { podcast, liveItems } = podcastAndLiveItemCompat(parsedFeed)
         const episodes = parsedFeed.items.map(episodeCompat)
-        const liveItems = podcast.liveItems.map((x: any) => liveItemCompatToEpisode(x))
   
         return { podcast, episodes, liveItems }
       } else {
