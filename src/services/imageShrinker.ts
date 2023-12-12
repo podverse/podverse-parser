@@ -1,7 +1,7 @@
 import request from 'axios'
 import { Podcast, convertToSlug } from 'podverse-shared'
 import { config } from '../config'
-import { awsInstance } from '../factories/aws'
+import { awsS3Instance } from '../factories/aws'
 import sharp from 'sharp'
 
 // This handles requesting the original image from the podcaster's server,
@@ -39,7 +39,7 @@ export const shrinkImage = async (podcast: Podcast) => {
       ContentType: 'image/jpeg'
     }
 
-    const result = await awsInstance.s3.upload(s3Params).promise()
+    const result = await awsS3Instance.s3.upload(s3Params).promise()
 
     return config.aws?.imageCloudFrontOrigin + '/' + result.Key
   } catch (error: any) {
