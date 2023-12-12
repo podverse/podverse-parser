@@ -7,6 +7,9 @@ export const config = {
     region: '456',
     secretAccessKey: '789'
   },
+  google: {
+    authToken: '1234'
+  },
   imageShrinker: {
     imageSize: 800
   },
