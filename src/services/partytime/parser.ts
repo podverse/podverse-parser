@@ -1,11 +1,7 @@
 import nodeFetch from 'node-fetch'
 import { parseFeed } from 'podcast-partytime'
 import { ParsedEpisode, ParsedLiveItem, ParsedPodcast, episodeCompat, podcastAndLiveItemCompat } from './compat'
-
-type AbortAPI = {
-  abortController: AbortController
-  abortTimeout: NodeJS.Timeout
-}
+import { generateAbortAPI } from 'podverse-shared'
 
 type Constructor = {
   userAgent: string
@@ -24,8 +20,9 @@ export class PartytimeService  {
     this.userAgent = userAgent
   }
   
-  parseFeed = async (url: string, abortAPI: AbortAPI): Promise<ParsedFeedResponse> => {
+  parseFeed = async (url: string): Promise<ParsedFeedResponse> => {
     try {
+      const abortAPI = generateAbortAPI()
       const { abortController } = abortAPI
       const response = await nodeFetch(url, {
         headers: { 'User-Agent': this.userAgent },

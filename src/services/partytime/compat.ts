@@ -20,6 +20,7 @@ export interface ParsedPodcast extends Pick<
   Podcast,
   'podcastGuid'
   | 'description'
+  | 'feedLastUpdated'
   | 'funding'
   | 'imageUrl'
   | 'isExplicit'
@@ -32,6 +33,7 @@ export interface ParsedPodcast extends Pick<
   | 'type'
   | 'value'
 > {
+  newestItemPubDate?: Date | null
   ptAuthors: string[]
   ptCategories?: string[]
 }
@@ -97,6 +99,7 @@ export const podcastAndLiveItemCompat = (feed: FeedObject): ParsedPodcastAndLive
     podcast: {
       podcastGuid: feed.guid,
       description: feed.description,
+      feedLastUpdated: feed.lastBuildDate || feed.pubDate || feed.newestItemPubDate,
       funding: Array.isArray(feed.podcastFunding) ? feed.podcastFunding?.map((f) => fundingCompat(f)) : [],
       imageUrl: feed.itunesImage || feed.image?.url,
       isExplicit: feed.explicit,
@@ -104,6 +107,7 @@ export const podcastAndLiveItemCompat = (feed: FeedObject): ParsedPodcastAndLive
       language: feed.language,
       linkUrl: feed.link,
       medium: feed.medium ?? Phase4Medium.Podcast,
+      newestItemPubDate: feed.newestItemPubDate,
       subtitle: feed.subtitle,
       title: feed.title,
       type: feed.itunesType,
@@ -122,7 +126,7 @@ export const episodeCompat = (episode: PartytimeEpisode): ParsedEpisode => {
     // TODO: why does contentLinks exist on liveItem but not episode type?
     // contentLinks: episode.contentLinks || [],
     description: getLongerSummary(episode.content, episode.description),
-    duration: episode.duration,
+    duration: episode.duration || 0,
     // TODO: episode.podcastFunding does not exist in partytime
     // funding: Array.isArray(episode.podcastFunding) ? episode.podcastFunding?.map((f) => fundingCompat(f)) : [],
     imageUrl: episode.image,

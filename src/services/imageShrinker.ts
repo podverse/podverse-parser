@@ -4,9 +4,11 @@ import { config } from '../config'
 import { awsS3Instance } from '../factories/aws'
 import sharp from 'sharp'
 
-// This handles requesting the original image from the podcaster's server,
-// shrinking the image, then PUTing it on our S3 bucket.
-export const shrinkImage = async (podcast: Podcast) => {
+/*
+  This handles requesting the original image from the podcaster's server,
+  shrinking the image, then PUTing it on our S3 bucket.
+*/
+const shrinkImage = async (podcast: Podcast) => {
   try {
 
     if (!podcast?.imageUrl) {
@@ -48,5 +50,18 @@ export const shrinkImage = async (podcast: Podcast) => {
     console.log('imageUrl', podcast.imageUrl)
     console.log(error.message)
     return null
+  }
+}
+
+export const uploadImageToS3AndSaveToDatabase = async (podcast: any, podcastRepo: any) => {
+  if (process.env.NODE_ENV === 'production') {
+    if (podcast && podcast.imageUrl) {
+      const shrunkImageUrl = await shrinkImage(podcast)
+      if (shrunkImageUrl) {
+        podcast.shrunkImageUrl = shrunkImageUrl
+        podcast.shrunkImageLastUpdated = new Date()
+        await podcastRepo.save(podcast)
+      }
+    }
   }
 }
