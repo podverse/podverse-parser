@@ -25,6 +25,7 @@
   "homepage": "https://github.com/podverse/podverse-parser#readme",
   "devDependencies": {
     "@types/node": "^20.10.4",
+    "@types/node-fetch": "2.6.1",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
     "eslint": "^8.54.0",
@@ -34,7 +35,7 @@
   "dependencies": {
     "aws-sdk": "2.814.0",
     "axios": "^1.6.2",
-    "node-fetch": "^3.3.2",
+    "node-fetch": "2.6.1",
     "podcast-partytime": "^4.8.0",
     "podverse-external-services": "^1.0.0",
     "podverse-orm": "^1.0.0",
