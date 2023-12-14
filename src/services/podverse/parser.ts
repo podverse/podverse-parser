@@ -23,7 +23,7 @@ import {
 import { getRepository } from 'typeorm'
 import { notificationsInstance } from '../../factories/notifications'
 import { partytimeInstance } from '../../factories/partytime'
-import { podcastIndexAPIInstance } from '../../factories/podcastIndex'
+import { podcastIndexInstance } from '../../factories/podcastIndex'
 import { uploadImageToS3AndSaveToDatabase } from '../imageShrinker'
 import { getLatestLiveItemInfo, getLatestLiveItemStatus } from '../partytime/compat'
 import { handleSaveAuthors } from './authors'
@@ -127,7 +127,7 @@ export class ParserService {
         let pvEpisodesValueTagsByGuid: EpisodesValueTagsByGuid = {}
         if (podcast.hasPodcastIndexValueTag && podcast.podcastIndexId) {
           try {
-            pvEpisodesValueTagsByGuid = await podcastIndexAPIInstance.getAllEpisodeValueTagsFromPodcastIndexById(podcast.podcastIndexId)
+            pvEpisodesValueTagsByGuid = await podcastIndexInstance.getAllEpisodeValueTagsFromPodcastIndexById(podcast.podcastIndexId)
           } catch (error: any) {
             logPerformance('pvEpisodesValueTagsByGuid error', error)
           }
@@ -200,7 +200,7 @@ export class ParserService {
 
       if ((!podcast.value || podcast.value.length === 0) && podcast.hasPodcastIndexValueTag && podcast.podcastIndexId) {
         try {
-          podcast.value = await podcastIndexAPIInstance.getPodcastValueTagForPodcastIndexId(podcast.podcastIndexId)
+          podcast.value = await podcastIndexInstance.getPodcastValueTagForPodcastIndexId(podcast.podcastIndexId)
         } catch (error: any) {
           logPerformance(`getPodcastValueTagForPodcastIndexId error ${error}`)
         }
