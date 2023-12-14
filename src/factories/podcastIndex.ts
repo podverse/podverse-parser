@@ -1,8 +1,9 @@
 import { PodcastIndexService } from 'podverse-external-services'
+import { config } from '../config'
 
-export const podcastIndexAPIInstance = new PodcastIndexService({
-  authKey: '',
-  baseUrl: 'https://api.podcastindex.org/api/1.0',
-  secretKey: '',
-  userAgent: 'Podverse/Feed Parser'
+export const podcastIndexInstance = new PodcastIndexService({
+  authKey: config.podcastIndex.authKey,
+  baseUrl: config.podcastIndex.baseUrl,
+  secretKey: config.podcastIndex.secretKey,
+  userAgent: config.userAgent
 })
