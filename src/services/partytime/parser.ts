@@ -1,7 +1,7 @@
 import nodeFetch from 'node-fetch'
 import { parseFeed } from 'podcast-partytime'
+import { AbortAPI } from 'podverse-shared'
 import { ParsedEpisode, ParsedLiveItem, ParsedPodcast, episodeCompat, podcastAndLiveItemCompat } from './compat'
-import { AbortAPI, generateAbortAPI } from 'podverse-shared'
 
 type Constructor = {
   userAgent: string
@@ -27,7 +27,7 @@ export class PartytimeService  {
         headers: { 'User-Agent': this.userAgent },
         follow: 5,
         size: 40000000,
-        signal: abortController.signal
+        signal: abortController.signal as any // TODO: remove any
       })
   
       if (response.ok) {
