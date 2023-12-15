@@ -39,7 +39,7 @@
     "podcast-partytime": "^4.8.0",
     "podverse-external-services": "^1.0.0",
     "podverse-orm": "^1.0.0",
-    "podverse-shared": "^4.15.2",
+    "podverse-shared": "^4.15.3",
     "request-promise-native": "1.0.8",
     "sharp": "0.32.6",
     "typeorm": "0.2.45"
