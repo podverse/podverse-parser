@@ -1,7 +1,6 @@
-import { Author } from "podverse-orm"
+import { Author, getRepository, In } from "podverse-orm"
 import { convertToSlug } from "podverse-shared"
 import { ParsedPodcast } from "../partytime/compat"
-import { getRepository, In } from "typeorm"
 
 const generateAuthor = (name: string) => {
   const author = new Author()

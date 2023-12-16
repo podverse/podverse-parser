@@ -1,5 +1,4 @@
-import { Episode, Podcast } from "podverse-orm"
-import { getRepository, In, Not } from "typeorm"
+import { Episode, getRepository, In, Not, Podcast } from "podverse-orm"
 import { ParsedEpisode } from "../partytime/compat"
 import { EpisodesValueTagsByGuid } from "./valueTags"
 import { checkIfVideoMediaType, isValidDate } from "podverse-shared"

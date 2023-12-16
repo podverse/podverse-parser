@@ -7,6 +7,7 @@ import {
   getFeedUrlsByPodcastIndexIds,
   getLiveItemByGuid,
   getPodcast,
+  getRepository,
   Podcast as ORMPodcast,
   retrieveLatestChapters,
   updateSoundBites
@@ -20,7 +21,6 @@ import {
   isValidDate,
   logPerformance
 } from 'podverse-shared'
-import { getRepository } from 'typeorm'
 import { notificationsInstance } from '../../factories/notifications'
 import { partytimeInstance } from '../../factories/partytime'
 import { podcastIndexInstance } from '../../factories/podcastIndex'

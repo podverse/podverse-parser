@@ -1,6 +1,5 @@
-import { Category } from "podverse-orm"
+import { Category, getRepository, In } from "podverse-orm"
 import { ParsedPodcast } from "../partytime/compat"
-import { getRepository, In } from "typeorm"
 
 const findCategories = async (categories: string[]) => {
   const c: string[] = []
