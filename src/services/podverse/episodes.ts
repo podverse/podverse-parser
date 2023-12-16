@@ -109,7 +109,7 @@ export const findOrGenerateParsedEpisodes = async (
         isPublic: true,
         guid: Not(In(parsedEpisodeGuids))
       }
-    })
+    }) as Episode[]
 
     const updatedEpisodesToHide = episodesToHide.map((episodeToHide: Episode) => {
       episodeToHide.isPublic = false
