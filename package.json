@@ -8,7 +8,7 @@
     "dist/**/*"
   ],
   "scripts": {
-    "dev:watch": "nodemon --watch 'src' --watch $(realpath node_modules/podverse-external-services) --watch $(realpath node_modules/podverse-orm) --watch $(realpath node_modules/podverse-shared) -x \"npm run build\"",
+    "dev:watch": "nodemon --watch 'src' --watch $(realpath node_modules/podverse-helpers) --watch $(realpath node_modules/podverse-orm) --delay 500ms -x \"npm run build\"",
     "build": "tsc",
     "lint": "eslint ./src --ext .ts",
     "prepare": "npm run build",
@@ -28,6 +28,7 @@
     "@eslint/js": "^9.8.0",
     "@types/node": "^22.1.0",
     "eslint": "^9.9.0",
+    "nodemon": "^3.1.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.0.1"
