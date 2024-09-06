@@ -1,9 +1,12 @@
 {
   "name": "podverse-parser",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
     "dev:watch": "nodemon --watch 'src' --watch $(realpath node_modules/podverse-external-services) --watch $(realpath node_modules/podverse-orm) --watch $(realpath node_modules/podverse-shared) -x \"npm run build\"",
     "build": "tsc",
@@ -12,10 +15,12 @@
     "start": "ts-node ./dist/index.js"
   },
   "author": "",
-  "license": "ISC",
+  "license": "AGPLv3",
   "dependencies": {
     "module-alias": "^2.2.3",
-    "podcast-partytime": "^4.8.1"
+    "podcast-partytime": "^4.8.1",
+    "podverse-helpers": "^5.0.0",
+    "podverse-orm": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/config-array": "^0.18.0",
