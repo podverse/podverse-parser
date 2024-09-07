@@ -1,5 +1,8 @@
 .env
 
+package-lock.json
+yarn.lock
+
 .git
 
 **/dist
