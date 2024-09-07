@@ -41,13 +41,10 @@ export const handleGetRSSFeed = async (feed: Feed): Promise<FeedObject> => {
   return parsedFeed;
 };
 
-export const handleParsedFeed = async (parsedFeed: FeedObject, url: string, podcast_index_id: number): Promise<Feed> => {
-  const feedService = new FeedService();
-  const feed = await feedService.getOrCreate({ url, podcast_index_id });
-  
+export const handleParsedFeed = async (parsedFeed: FeedObject, feed: Feed): Promise<Feed> => {
   // TODO: move before partytime parsing
   if (!checkIfFeedFlagStatusShouldParse(feed.feed_flag_status.id)) {
-    throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not None or AlwaysAllow for ${url}`);
+    throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not None or AlwaysAllow for ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
   }
 
   checkIfFeedIsParsing(feed);
@@ -58,6 +55,7 @@ export const handleParsedFeed = async (parsedFeed: FeedObject, url: string, podc
     throw new Error(`Feed ${feed.id} has no changes since last parsed.`);
   }
 
+  const feedService = new FeedService();
   return feedService.update(feed.id, { last_parsed_file_hash: currentFeedFileHash });
 };
 

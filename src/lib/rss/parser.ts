@@ -41,13 +41,28 @@ export const getAndParseRSSFeed = async (url: string) => {
 export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_id: number) => {
   const feedService = new FeedService();
 
-  let feed = await feedService.getBy({ url, podcast_index_id });
+  let feed = await feedService.getByUrlAndPodcastIndexId({ url, podcast_index_id });
+  
+  if (!feed) {
+    feed = await feedService.getByPodcastIndexId({ podcast_index_id });
+    if (feed) {
+      feed.url = url;
+      await feedService.update(feed.id, { url });
+    }
+  }
+
+  // TODO: we may not want to create feeds in this helper in production
+  // but i'm adding it here for stage testing.
+  if (!feed) {
+    feed = await feedService.getOrCreate({ url, podcast_index_id });
+  }
+
   if (!feed) {
     throw new Error(`parseRSSFeedAndSaveToDatabase: feed not found for ${url}`);
   }
 
   const parsedFeed = await handleGetRSSFeed(feed);
-  feed = await handleParsedFeed(parsedFeed, url, podcast_index_id);
+  feed = await handleParsedFeed(parsedFeed, feed);
   
   try {
     await feedService.update(feed.id, { is_parsing: new Date() });
