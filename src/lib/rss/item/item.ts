@@ -25,7 +25,7 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
   const existingItemIds = existingItems.map(item => item.id);
   const updatedItemIds: number[] = [];
 
-  const parsedItemBatchs = chunkArray(parsedItems, 100);
+  const parsedItemBatchs = chunkArray(parsedItems, 50);
   for (const parsedItemBatch of parsedItemBatchs) {
     await AppDataSource.manager.transaction(async transactionalEntityManager => {
       for (const parsedItem of parsedItemBatch) {

@@ -11,7 +11,7 @@ export const handleParsedLiveItems = async (parsedLiveItems: Phase4PodcastLiveIt
   const updatedLiveItemIds: number[] = [];
   const liveItemObjDtos = compatLiveItemsDtos(parsedLiveItems);
 
-  const liveItemObjDtosBatchs = chunkArray(liveItemObjDtos, 100);
+  const liveItemObjDtosBatchs = chunkArray(liveItemObjDtos, 50);
   for (const liveItemObjDtosBatch of liveItemObjDtosBatchs) {
     await AppDataSource.manager.transaction(async transactionalEntityManager => {
       for (const liveItemObjDto of liveItemObjDtosBatch) {
