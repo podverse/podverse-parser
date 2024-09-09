@@ -1,24 +1,36 @@
 import { FeedObject, Phase4Medium } from "podcast-partytime";
-import { createSortableTitle, getBooleanOrNull } from "podverse-helpers";
-import { getMediumEnumValue, getChannelItunesTypeItunesTypeEnumValue } from "podverse-orm";
-import { compatChannelValue } from "@parser/lib/compat/partytime/value";
+import { DATABASE_CONSTANTS } from "podverse-helpers";
 import { Phase4PodcastImage } from "podcast-partytime/dist/parser/phase/phase-4";
+import { createSortableTitle, getBooleanOrNull } from "podverse-helpers";
+import { getChannelItunesTypeItunesTypeEnumValue, getMediumEnumValue } from "podverse-orm";
+import { compatChannelValue } from "@parser/lib/compat/partytime/value";
 
 export const compatChannelDto = (parsedFeed: FeedObject) => ({
-  podcast_guid: parsedFeed.guid,
-  title: parsedFeed.title,
-  sortable_title: createSortableTitle(parsedFeed.title),
+  podcast_guid: parsedFeed.guid?.slice(0, DATABASE_CONSTANTS.varchar_guid) || null,
+  title: parsedFeed.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+  sortable_title: createSortableTitle(parsedFeed.title)?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
   medium: getMediumEnumValue(parsedFeed.medium ?? Phase4Medium.Podcast)
 });
 
 export const compatChannelAboutDto = (parsedFeed: FeedObject) => ({
-  author: (Array.isArray(parsedFeed.author) ? parsedFeed.author : parsedFeed.author ? [parsedFeed.author] : [])?.join(', ') || null,
+  author: (
+    (Array.isArray(parsedFeed.author)
+      ? parsedFeed.author
+      : parsedFeed.author 
+        ? [parsedFeed.author] : []
+    )?.join(', '))?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
   explicit: getBooleanOrNull(parsedFeed.explicit),
-  language: parsedFeed.language || null,
-  last_pub_date: parsedFeed.pubDate || null,
-  website_link_url: parsedFeed.link || null,
+  language: parsedFeed.language?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
+  website_link_url: parsedFeed.link?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
   itunes_type: getChannelItunesTypeItunesTypeEnumValue(parsedFeed.itunesType || 'episodic'),
-  episode_count: (parsedFeed.items?.length || 0) + (parsedFeed.podcastLiveItems?.length || 0),
+  episode_count: parsedFeed.items?.length || 0,
+  last_pub_date: parsedFeed.items?.reduce((latest, item) => {
+    if (item.pubDate) {
+      const itemDate = new Date(item.pubDate);
+      return itemDate > latest ? itemDate : latest;
+    }
+    return latest;
+  }, new Date(0)) || null
 });
 
 export const compatChannelChatDto = (parsedFeed: FeedObject) => {
@@ -26,10 +38,10 @@ export const compatChannelChatDto = (parsedFeed: FeedObject) => {
     return null;
   }
   return {
-    server: parsedFeed.chat.server,
-    protocol: parsedFeed.chat.protocol,
-    account_id: parsedFeed.chat.accountId || null,
-    space: parsedFeed.chat.space || null
+    server: parsedFeed.chat.server?.slice(0, DATABASE_CONSTANTS.varchar_fqdn) || null,
+    protocol: parsedFeed.chat.protocol.slice(0, DATABASE_CONSTANTS.varchar_short),
+    account_id: parsedFeed.chat.accountId?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+    space: parsedFeed.chat.space?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
   };
 };
 
@@ -38,7 +50,7 @@ export const compatChannelDescriptionDto = (parsedFeed: FeedObject) => {
     return null;
   }
   return {
-    value: parsedFeed.description
+    value: parsedFeed.description.slice(0, DATABASE_CONSTANTS.varchar_long)
   };
 };
 
@@ -49,8 +61,8 @@ export const compatChannelFundingDtos = (parsedFeed: FeedObject) => {
     for (const f of parsedFeed.podcastFunding) {
       if (f.url) {
         dtos.push({
-          url: f.url,
-          title: f.message || null
+          url: f.url?.slice(0, DATABASE_CONSTANTS.varchar_url),
+          title: f.message?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
         });
       }
     }
@@ -63,12 +75,12 @@ export const compatChannelImageDtos = (parsedFeed: FeedObject) => {
   const dtos = [];
   if (parsedFeed.itunesImage) {
     dtos.push({
-      url: parsedFeed.itunesImage,
+      url: parsedFeed.itunesImage.slice(0, DATABASE_CONSTANTS.varchar_url),
       image_width_size: null
     });
   } else if (parsedFeed.image?.url) {
     dtos.push({
-      url: parsedFeed.image.url,
+      url: parsedFeed.image.url.slice(0, DATABASE_CONSTANTS.varchar_url),
       image_width_size: null
     });
   }
@@ -81,7 +93,7 @@ export const compatChannelImageDtos = (parsedFeed: FeedObject) => {
     for (const image of parsedFeed.podcastImages) {
       if (image.parsed.url && hasWidth(image.parsed)) {
         dtos.push({
-          url: image.parsed.url,
+          url: image.parsed.url.slice(0, DATABASE_CONSTANTS.varchar_url),
           image_width_size: image.parsed.width
         });
       }
@@ -96,8 +108,8 @@ export const compatChannelLicenseDto = (parsedFeed: FeedObject) => {
     return null;
   }
   return {
-    identifier: parsedFeed.license.identifier,
-    url: parsedFeed.license.url || null
+    identifier: parsedFeed.license.identifier.slice(0, DATABASE_CONSTANTS.varchar_normal),
+    url: parsedFeed.license.url?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
   };
 };
 
@@ -107,9 +119,9 @@ export const compatChannelLocationDto = (parsedFeed: FeedObject) => {
   }
 
   return {
-    geo: parsedFeed.podcastLocation.geo || null,
-    osm: parsedFeed.podcastLocation.osm || null,
-    name: parsedFeed.podcastLocation.name || null
+    geo: parsedFeed.podcastLocation.geo?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+    osm: parsedFeed.podcastLocation.osm?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+    name: parsedFeed.podcastLocation.name?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
   };
 };
 
@@ -120,11 +132,11 @@ export const compatChannelPersonDtos = (parsedFeed: FeedObject) => {
     for (const p of parsedFeed.podcastPeople) {
       if (p.name) {
         dtos.push({
-          name: p.name,
-          role: p.role?.toLowerCase() || null,
-          person_group: p.group?.toLowerCase() || 'cast',
-          img: p.img || null,
-          href: p.href || null
+          name: p.name.slice(0, DATABASE_CONSTANTS.varchar_normal),
+          role: p.role?.toLowerCase()?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+          person_group: p.group?.toLowerCase()?.slice(0, DATABASE_CONSTANTS.varchar_normal) || 'cast',
+          img: p.img?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+          href: p.href?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
         });
       }
     }
@@ -140,8 +152,8 @@ export const compatChannelPodrollRemoteItemDtos = (parsedFeed: FeedObject) => {
     for (const ri of parsedFeed.podroll) {
       if (ri.feedGuid) {
         dtos.push({
-          feed_guid: ri.feedGuid,
-          feed_url: ri.feedUrl || null,
+          feed_guid: ri.feedGuid.slice(0, DATABASE_CONSTANTS.varchar_guid),
+          feed_url: ri.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
           item_guid: null,
           title: /* PTDO: ri.title || */ null
         });
@@ -159,8 +171,8 @@ export const compatChannelPublisherRemoteItemDtos = (parsedFeed: FeedObject) => 
     for (const ri of parsedFeed.podroll) {
       if (ri.feedGuid) {
         dtos.push({
-          feed_guid: ri.feedGuid,
-          feed_url: ri.feedUrl || null,
+          feed_guid: ri.feedGuid.slice(0, DATABASE_CONSTANTS.varchar_guid),
+          feed_url: ri.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
           item_guid: null,
           title: /* PTDO: ri.title || */ null
         });
@@ -178,8 +190,8 @@ export const compatChannelRemoteItemDtos = (parsedFeed: FeedObject) => {
     for (const ri of parsedFeed.podcastRemoteItems) {
       if (ri.feedGuid) {
         dtos.push({
-          feed_guid: ri.feedGuid,
-          feed_url: ri.feedUrl || null,
+          feed_guid: ri.feedGuid.slice(0, DATABASE_CONSTANTS.varchar_guid),
+          feed_url: ri.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
           item_guid: null,
           title: /* PTDO: ri.title || */ null
         });
@@ -197,10 +209,10 @@ export const compatChannelSocialInteractDtos = (parsedFeed: FeedObject) => {
     for (const ps of parsedFeed.podcastSocial) {
       dtos.push({
         // PTDO: fix keys mismatch between partytime and podverse
-        protocol: ps.platform,
-        uri: ps.url,
-        account_id: ps.id || null,
-        account_url: ps.name || null,
+        protocol: ps.platform.slice(0, DATABASE_CONSTANTS.varchar_short),
+        uri: ps.url.slice(0, DATABASE_CONSTANTS.varchar_uri),
+        account_id: ps.id?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+        account_url: ps.name?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
         priority: ps.priority || null
       });
     }
@@ -222,7 +234,7 @@ export const compatChannelSeasonDtos = (parsedFeed: FeedObject) => {
     if (Number.isInteger(seasonNumber)) {
       const seasonNumberAsNumber = seasonNumber as number;
       seasonsIndex[seasonNumberAsNumber] = {
-        name: seasonName
+        name: seasonName?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
       };
     }
   }
@@ -242,11 +254,11 @@ export const compatChannelTrailerDtos = (parsedFeed: FeedObject) => {
   if (parsedFeed?.trailers?.length) {
     for (const pt of parsedFeed.trailers) {
       dtos.push({
-        url: pt.url,
+        url: pt.url.slice(0, DATABASE_CONSTANTS.varchar_url),
         title: /* PTDO: add pt.title || */ null,
         pubdate: pt.pubdate,
         length: pt.length || null,
-        type: pt.type || null,
+        type: pt.type?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
         season: pt.season || null
       });
     }
@@ -260,8 +272,8 @@ export const compatChannelTxtDtos = (parsedFeed: FeedObject) => {
   if (parsedFeed?.podcastTxt?.length) {
     for (const pt of parsedFeed.podcastTxt) {
       dtos.push({
-        purpose: pt.purpose || null,
-        value: pt.value
+        purpose: pt.purpose?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+        value: pt.value.slice(0, DATABASE_CONSTANTS.varchar_long)
       });
     }
   }
@@ -276,8 +288,8 @@ export const compatChannelValueDtos = (parsedFeed: FeedObject) => {
 
     const formattedDto = {
       channel_value: {
-        type: dto.type,
-        method: dto.method,
+        type: dto.type.slice(0, DATABASE_CONSTANTS.varchar_short),
+        method: dto.method.slice(0, DATABASE_CONSTANTS.varchar_short),
         suggested: dto.suggested || null
       },
       channel_value_recipients: dto.channel_value_recipients

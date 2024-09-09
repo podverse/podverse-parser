@@ -47,8 +47,9 @@ export const handleParsedFeed = async (parsedFeed: FeedObject, feed: Feed): Prom
     throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not None or AlwaysAllow for ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
   }
 
+
   checkIfFeedIsParsing(feed);
- 
+
   const currentFeedFileHash = getParsedFeedMd5Hash(parsedFeed);
 
   if (feed.last_parsed_file_hash === currentFeedFileHash) {

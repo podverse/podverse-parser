@@ -39,7 +39,7 @@ export const getAndParseRSSFeed = async (url: string) => {
 // };
 
 export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_id: number) => {
-  logger.info('parseRSSFeedAndSaveToDatabase', url, podcast_index_id);
+  logger.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
   const feedService = new FeedService();
 
   let feed = await feedService.getByUrlAndPodcastIndexId({ url, podcast_index_id });

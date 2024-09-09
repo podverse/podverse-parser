@@ -1,19 +1,20 @@
 import type { Episode } from 'podcast-partytime';
 import { Phase4PodcastImage } from 'podcast-partytime/dist/parser/phase/phase-4';
+import { DATABASE_CONSTANTS } from 'podverse-helpers';
 import { getItemItunesEpisodeTypeEnumValue } from 'podverse-orm';
 import { compatItemValue } from './value';
 
 export const compatItemDto = (parsedItem: Episode) => ({
-  guid: parsedItem.guid || null,
-  guid_enclosure_url: parsedItem.enclosure.url,
+  guid: parsedItem.guid?.slice(0, DATABASE_CONSTANTS.varchar_guid) || null,
+  guid_enclosure_url: parsedItem.enclosure.url.slice(0, DATABASE_CONSTANTS.varchar_url),
   pubdate: parsedItem.pubDate || null,
-  title: parsedItem.title || null
+  title: parsedItem.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
 });
 
 export const compatItemAboutDto = (parsedItem: Episode) => ({
   duration: parsedItem.duration?.toFixed(2) || null,
   explicit: parsedItem.explicit || false,
-  website_link_url: parsedItem.link || null,
+  website_link_url: parsedItem.link?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
   item_itunes_episode_type: getItemItunesEpisodeTypeEnumValue(parsedItem.itunesEpisodeType || 'full')
 });
 
@@ -21,8 +22,8 @@ export const compatItemChaptersFeedDto = (parsedItem: Episode) => {
   if (!parsedItem.podcastChapters?.url && !parsedItem.podcastChapters?.type) return null;
   
   return {
-    url: parsedItem.podcastChapters?.url,
-    type: parsedItem.podcastChapters?.type
+    url: parsedItem.podcastChapters?.url.slice(0, DATABASE_CONSTANTS.varchar_url),
+    type: parsedItem.podcastChapters?.type.slice(0, DATABASE_CONSTANTS.varchar_short)
   };
 };
 
@@ -31,10 +32,10 @@ export const compatItemChatDto = (parsedItem: Episode) => {
     return null;
   }
   return {
-    server: parsedItem.chat.server,
-    protocol: parsedItem.chat.protocol,
-    account_id: parsedItem.chat.accountId || null,
-    space: parsedItem.chat.space || null
+    server: parsedItem.chat.server.slice(0, DATABASE_CONSTANTS.varchar_fqdn),
+    protocol: parsedItem.chat.protocol.slice(0, DATABASE_CONSTANTS.varchar_short),
+    account_id: parsedItem.chat.accountId?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+    space: parsedItem.chat.space?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
   };
 };
 
@@ -43,7 +44,7 @@ export const compatItemDescriptionDto = (parsedItem: Episode) => {
     return null;
   }
   return {
-    value: parsedItem.description
+    value: parsedItem.description.slice(0, DATABASE_CONSTANTS.varchar_long)
   };
 };
 
@@ -53,14 +54,14 @@ export const compatItemEnclosureDtos = (parsedItem: Episode) => {
   if (parsedItem.alternativeEnclosures && parsedItem.alternativeEnclosures.length > 0) {
     for (const alternativeEnclosure of parsedItem.alternativeEnclosures) {
       const item_enclosure = {
-        type: alternativeEnclosure.type,
+        type: alternativeEnclosure.type.slice(0, DATABASE_CONSTANTS.varchar_short),
         length: alternativeEnclosure.length || null,
         bitrate: alternativeEnclosure.bitrate || null,
         height: alternativeEnclosure.height || null,
-        language: alternativeEnclosure.lang || null,
-        title: alternativeEnclosure.title || null,
-        rel: alternativeEnclosure.rel || null,
-        codecs: alternativeEnclosure.codecs || null,
+        language: alternativeEnclosure.lang?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
+        title: alternativeEnclosure.title?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
+        rel: alternativeEnclosure.rel?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
+        codecs: alternativeEnclosure.codecs?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
         item_enclosure_default: false
       };
 
@@ -73,8 +74,8 @@ export const compatItemEnclosureDtos = (parsedItem: Episode) => {
       const item_enclosure_integrity = (alternativeEnclosure.integrity as any) || null;
 
       const item_enclosure_sources = alternativeEnclosure.source.map(source => ({
-        uri: source.uri,
-        content_type: source.contentType
+        uri: source.uri.slice(0, DATABASE_CONSTANTS.varchar_uri),
+        content_type: source.contentType.slice(0, DATABASE_CONSTANTS.varchar_short)
       }));
 
       const formattedDto = {
@@ -94,12 +95,12 @@ export const compatItemImageDtos = (parsedItem: Episode) => {
   const dtos = [];
   if (parsedItem.itunesImage) {
     dtos.push({
-      url: parsedItem.itunesImage,
+      url: parsedItem.itunesImage.slice(0, DATABASE_CONSTANTS.varchar_url),
       image_width_size: null
     });
   } else if (parsedItem.image) {
     dtos.push({
-      url: parsedItem.image,
+      url: parsedItem.image.slice(0, DATABASE_CONSTANTS.varchar_url),
       image_width_size: null
     });
   }
@@ -112,7 +113,7 @@ export const compatItemImageDtos = (parsedItem: Episode) => {
     for (const image of parsedItem.podcastImages) {
       if (image.parsed.url && hasWidth(image.parsed)) {
         dtos.push({
-          url: image.parsed.url,
+          url: image.parsed.url.slice(0, DATABASE_CONSTANTS.varchar_url),
           image_width_size: image.parsed.width
         });
       }
@@ -127,8 +128,8 @@ export const compatItemLicenseDto = (parsedItem: Episode) => {
     return null;
   }
   return {
-    identifier: parsedItem.license.identifier,
-    url: parsedItem.license.url || null
+    identifier: parsedItem.license.identifier.slice(0, DATABASE_CONSTANTS.varchar_normal),
+    url: parsedItem.license.url?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
   };
 };
 
@@ -138,9 +139,9 @@ export const compatItemLocationDto = (parsedItem: Episode) => {
   }
 
   return {
-    geo: parsedItem.podcastLocation.geo || null,
-    osm: parsedItem.podcastLocation.osm || null,
-    name: parsedItem.podcastLocation.name || null
+    geo: parsedItem.podcastLocation.geo?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+    osm: parsedItem.podcastLocation.osm?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+    name: parsedItem.podcastLocation.name?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
   };
 };
 
@@ -151,11 +152,11 @@ export const compatItemPersonDtos = (parsedItem: Episode) => {
     for (const p of parsedItem.podcastPeople) {
       if (p.name) {
         dtos.push({
-          name: p.name,
-          role: p.role?.toLowerCase() || null,
-          person_group: p.group?.toLowerCase() || 'cast',
-          img: p.img || null,
-          href: p.href || null
+          name: p.name.slice(0, DATABASE_CONSTANTS.varchar_normal),
+          role: p.role?.toLowerCase()?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+          person_group: p.group?.toLowerCase()?.slice(0, DATABASE_CONSTANTS.varchar_normal) || 'cast',
+          img: p.img?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+          href: p.href?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
         });
       }
     }
@@ -171,7 +172,7 @@ export const compatItemSeasonDto = (parsedItem: Episode) => {
 
   return {
     number: parsedItem.podcastSeason.number,
-    title: parsedItem.podcastSeason.name || null
+    title: parsedItem.podcastSeason.name?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
   };
 };
 
@@ -181,7 +182,7 @@ export const compatItemSeasonEpisodeDto = (parsedItem: Episode) => {
   }
 
   return {
-    display: parsedItem.podcastEpisode.display || null,
+    display: parsedItem.podcastEpisode.display?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
     number: parsedItem.podcastEpisode.number
   };
 };
@@ -193,10 +194,10 @@ export const compatItemSocialInteractDtos = (parsedItem: Episode) => {
     for (const ps of parsedItem.podcastSocialInteraction) {
       dtos.push({
         // PTDO: fix keys mismatch between partytime and podverse
-        protocol: ps.platform,
-        uri: ps.url,
-        account_id: ps.id || null,
-        account_url: ps.profileUrl || null,
+        protocol: ps.platform.slice(0, DATABASE_CONSTANTS.varchar_short),
+        uri: ps.url.slice(0, DATABASE_CONSTANTS.varchar_uri),
+        account_id: ps.id?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+        account_url: ps.profileUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
         priority: ps.priority || null
       });
     }
@@ -211,9 +212,9 @@ export const compatItemSoundbiteDtos = (parsedItem: Episode) => {
   if (parsedItem?.podcastSoundbites?.length) {
     for (const s of parsedItem.podcastSoundbites) {
       dtos.push({
-        start_time: s.startTime.toFixed(2),
-        duration: s.duration.toFixed(2),
-        title: s.title || null
+        start_time: DATABASE_CONSTANTS.getMediaPlayerNumeric(s.startTime),
+        duration: DATABASE_CONSTANTS.getMediaPlayerNumeric(s.duration),
+        title: s.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
       });
     }
   }
@@ -227,10 +228,10 @@ export const compatItemTranscriptDtos = (parsedItem: Episode) => {
   if (parsedItem?.podcastTranscripts?.length) {
     for (const t of parsedItem.podcastTranscripts) {
       dtos.push({
-        url: t.url,
-        type: t.type,
-        language: t.language || null,
-        rel: t.rel || null
+        url: t.url.slice(0, DATABASE_CONSTANTS.varchar_url),
+        type: t.type.slice(0, DATABASE_CONSTANTS.varchar_short),
+        language: t.language?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
+        rel: t.rel?.slice(0, 50) || null
       });
     }
   }
@@ -244,8 +245,8 @@ export const compatItemTxtDtos = (parsedItem: Episode) => {
   if (parsedItem?.podcastTxt?.length) {
     for (const txt of parsedItem.podcastTxt) {
       dtos.push({
-        purpose: txt.purpose || null,
-        value: txt.value
+        purpose: txt.purpose?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+        value: txt.value.slice(0, DATABASE_CONSTANTS.varchar_long)
       });
     }
   }
@@ -259,8 +260,8 @@ export const compatItemValueDtos = (parsedItem: Episode) => {
     const dto = compatItemValue(parsedItem.value);
     const formattedDto = {
       item_value: {
-        type: dto.type,
-        method: dto.method,
+        type: dto.type.slice(0, DATABASE_CONSTANTS.varchar_short),
+        method: dto.method.slice(0, DATABASE_CONSTANTS.varchar_short),
         suggested: dto.suggested || null
       },
       item_value_recipients: dto.item_value_recipients,
