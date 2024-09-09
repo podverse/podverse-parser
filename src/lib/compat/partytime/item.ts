@@ -5,7 +5,7 @@ import { getItemItunesEpisodeTypeEnumValue } from 'podverse-orm';
 import { compatItemValue } from './value';
 
 export const compatItemDto = (parsedItem: Episode) => ({
-  guid: parsedItem.guid?.slice(0, DATABASE_CONSTANTS.varchar_guid) || null,
+  guid: parsedItem.guid?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
   guid_enclosure_url: parsedItem.enclosure.url.slice(0, DATABASE_CONSTANTS.varchar_url),
   pubdate: parsedItem.pubDate || null,
   title: parsedItem.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null

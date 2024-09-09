@@ -1,5 +1,5 @@
 import { Episode } from "podcast-partytime";
-import { chunkArray } from "podverse-helpers";
+import { chunkArray, DATABASE_CONSTANTS } from "podverse-helpers";
 import { AppDataSource, Channel, ChannelSeasonIndex, EntityManager, ItemService } from "podverse-orm";
 import { compatItemDto } from "@parser/lib/compat/partytime/item";
 import { handleParsedItemAbout } from "@parser/lib/rss/item/itemAbout";
@@ -19,13 +19,27 @@ import { handleParsedItemTxt } from "@parser/lib/rss/item/itemTxt";
 import { handleParsedItemValue } from "@parser/lib/rss/item/itemValue";
 import { handleParsedItemChat } from "@parser/lib/rss/item/itemChat";
 
+const removeDuplicates = (parsedItems: Episode[]): Episode[] => {
+  const seen = new Set<string>();
+  return parsedItems.reduce((acc, item) => {
+    const enclosureUrl = item.enclosure.url.slice(0, DATABASE_CONSTANTS.varchar_url);
+    if (!seen.has(enclosureUrl)) {
+      seen.add(enclosureUrl);
+      acc.push(item);
+    }
+    return acc;
+  }, [] as Episode[]);
+};
+
 export const handleParsedItems = async (parsedItems: Episode[], channel: Channel, channelSeasonIndex: ChannelSeasonIndex) => {
   const itemService = new ItemService();
   const existingItems = await itemService.getAllItemsByChannel(channel, { select: ['id'] });
   const existingItemIds = existingItems.map(item => item.id);
   const updatedItemIds: number[] = [];
 
-  const parsedItemBatchs = chunkArray(parsedItems, 50);
+  const uniqueParsedItems = removeDuplicates(parsedItems);
+  const parsedItemBatchs = chunkArray(uniqueParsedItems, 50);
+
   for (const parsedItemBatch of parsedItemBatchs) {
     await AppDataSource.manager.transaction(async transactionalEntityManager => {
       for (const parsedItem of parsedItemBatch) {
