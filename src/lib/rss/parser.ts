@@ -63,6 +63,7 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
   }
 
   const parsedFeed = await handleGetRSSFeed(feed);
+  logger.info(`item count: ${parsedFeed.items.length}`);
   feed = await handleParsedFeed(parsedFeed, feed);
   
   try {
