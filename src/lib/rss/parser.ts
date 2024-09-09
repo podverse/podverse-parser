@@ -94,10 +94,9 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     const feedLogService = new FeedLogService();
     await feedLogService.update(feed, { last_finished_parse_time: new Date() });
   } catch (error) {
-    logger.error('parseRSSFeedAndSaveToDatabase error');
-    logger.error('podcast_index_id:', podcast_index_id);
-    logger.error('url:', url);
-    logger.error(error);
+    const err = error as Error;
+    logger.error('parseRSSFeedAndSaveToDatabase error:', err.stack);
+    throw err;
   } finally {
     await feedService.update(feed.id, { is_parsing: null });
   }
