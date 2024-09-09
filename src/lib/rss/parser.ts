@@ -1,5 +1,5 @@
 import { parseFeed } from 'podcast-partytime';
-import { logger, request } from 'podverse-helpers';
+import { logError, logger, request } from 'podverse-helpers';
 import { ChannelService, ChannelSeasonService, FeedLogService, FeedService } from 'podverse-orm';
 import { handleParsedChannel } from "@parser/lib/rss/channel/channel";
 import { handleParsedItems } from './item/item';
@@ -95,12 +95,10 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     const feedLogService = new FeedLogService();
     await feedLogService.update(feed, { last_finished_parse_time: new Date() });
   } catch (error) {
-    const err = error as Error;
-    logger.error('parseRSSFeedAndSaveToDatabase error:', err.stack);
-    throw err;
+    logError('parseRSSFeedAndSaveToDatabase', error as Error);
   } finally {
     await feedService.update(feed.id, { is_parsing: null });
   }
 
-  return feed;
+  return;
 };
