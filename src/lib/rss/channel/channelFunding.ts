@@ -1,4 +1,5 @@
 import { FeedObject } from "podcast-partytime";
+import { timerManager } from "podverse-helpers";
 import { Channel, ChannelFundingService, EntityManager } from "podverse-orm";
 import { compatChannelFundingDtos } from "@parser/lib/compat/partytime/channel";
 import { handleParsedManyData } from "../base/handleParsedManyData";
@@ -6,9 +7,11 @@ import { handleParsedManyData } from "../base/handleParsedManyData";
 export const handleParsedChannelFunding = async (
   parsedFeed: FeedObject,
   channel: Channel,
-  transactionalEntityManager: EntityManager
+  transactionalEntityManager?: EntityManager
 ) => {
+  timerManager.start("handleParsedChannelFunding");
   const channelFundingService = new ChannelFundingService(transactionalEntityManager);
   const channelFundingDtos = compatChannelFundingDtos(parsedFeed);
   await handleParsedManyData(channel, channelFundingService, channelFundingDtos);
+  timerManager.end("handleParsedChannelFunding");
 };

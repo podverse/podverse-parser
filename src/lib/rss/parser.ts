@@ -1,11 +1,11 @@
 import { parseFeed } from 'podcast-partytime';
-import { logError, logger, request } from 'podverse-helpers';
+import { logError, logger, request, timerManager } from 'podverse-helpers';
 import { ChannelService, ChannelSeasonService, FeedLogService, FeedService } from 'podverse-orm';
 import { handleParsedChannel } from "@parser/lib/rss/channel/channel";
 import { handleParsedItems } from './item/item';
 import { handleParsedChannelSeasons } from './channel/channelSeason';
 import { handleParsedLiveItems } from './liveItem/liveItem';
-import { handleGetRSSFeed, handleParsedFeed } from './feed/feed';
+import { handleRequestRSSFeed, handleParsedFeed, handleGetRSSFeed } from './feed/feed';
 
 /*
   NOTE: All RSS feeds that have a podcast_index_id will be saved to the database.
@@ -38,40 +38,21 @@ export const getAndParseRSSFeed = async (url: string) => {
 //   return compatData;
 // };
 
-export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_id: number) => {
-  logger.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
+export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_id: number) => {  
   const feedService = new FeedService();
-
-  let feed = await feedService.getByUrlAndPodcastIndexId({ url, podcast_index_id });
-  
-  if (!feed) {
-    feed = await feedService.getByPodcastIndexId({ podcast_index_id });
-    if (feed) {
-      feed.url = url;
-      await feedService.update(feed.id, { url });
-    }
-  }
-
-  // TODO: we may not want to create feeds in this helper in production
-  // but i'm adding it here for stage testing.
-  if (!feed) {
-    feed = await feedService.getOrCreate({ url, podcast_index_id });
-  }
-
-  if (!feed) {
-    throw new Error(`parseRSSFeedAndSaveToDatabase: feed not found for ${url}`);
-  }
-
-  const parsedFeed = await handleGetRSSFeed(feed);
-  logger.info(`item count: ${parsedFeed.items.length}`);
-  feed = await handleParsedFeed(parsedFeed, feed);
+  let feed = null;
   
   try {
+    logger.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
+    feed = await handleGetRSSFeed(url, podcast_index_id);
+    
+    const parsedFeed = await handleRequestRSSFeed(feed);
+    feed = await handleParsedFeed(parsedFeed, feed);
     await feedService.update(feed.id, { is_parsing: new Date() });
-
+    
     const channelService = new ChannelService();
     const channel = await channelService.getOrCreateByPodcastIndexId({ feed, podcast_index_id });
-  
+    
     // ChannelSeason must be parsed before anything else, because the channel season rows
     // need to be created for other data to have a foreign key to them.
     await handleParsedChannelSeasons(parsedFeed, channel);
@@ -79,7 +60,8 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     const channelSeasonIndex = await channelSeasonService.getChannelSeasonIndex(channel);
     
     await handleParsedChannel(parsedFeed, channel, channelSeasonIndex);
-  
+    
+    logger.info(`item count: ${parsedFeed.items.length}`);
     // PTDO: if publisher feed, handle publisher remote item data
     // else handle parsed items
     await handleParsedItems(parsedFeed.items, channel, channelSeasonIndex);
@@ -87,7 +69,7 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     if (parsedFeed.podcastLiveItems) {
       await handleParsedLiveItems(parsedFeed.podcastLiveItems, channel, channelSeasonIndex);
     }
-  
+    
     // TODO: handle new item notifications
     
     // TODO: handle new live_item notifications
@@ -97,7 +79,10 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
   } catch (error) {
     logError('parseRSSFeedAndSaveToDatabase', error as Error);
   } finally {
-    await feedService.update(feed.id, { is_parsing: null });
+    timerManager.endAll();
+    if (feed) {
+      await feedService.update(feed.id, { is_parsing: null });
+    }
   }
 
   return;

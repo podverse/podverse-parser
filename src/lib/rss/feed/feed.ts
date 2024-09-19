@@ -1,10 +1,41 @@
 import { FeedObject } from "podcast-partytime";
-import { throwRequestError } from "podverse-helpers";
+import { throwRequestError, timerManager } from "podverse-helpers";
 import { checkIfFeedFlagStatusShouldParse, Feed, FeedService, FeedLogService } from "podverse-orm";
 import { getParsedFeedMd5Hash } from "../hash/parsedFeed";
 import { getAndParseRSSFeed } from "../parser";
 
-export const handleGetRSSFeed = async (feed: Feed): Promise<FeedObject> => {
+export const handleGetRSSFeed = async (url: string, podcast_index_id: number): Promise<Feed> => {
+  timerManager.start('handleGetRSSFeed');
+
+  const feedService = new FeedService();
+
+  let feed = await feedService.getByUrlAndPodcastIndexId({ url, podcast_index_id });
+  
+  if (!feed) {
+    feed = await feedService.getByPodcastIndexId({ podcast_index_id });
+    if (feed) {
+      feed.url = url;
+      await feedService.update(feed.id, { url });
+    }
+  }
+
+  // TODO: we may not want to create feeds in this helper in production
+  // but i'm adding it here for stage testing.
+  if (!feed) {
+    feed = await feedService.getOrCreate({ url, podcast_index_id });
+  }
+
+  timerManager.end('handleGetRSSFeed');
+
+  if (!feed) {
+    throw new Error(`parseRSSFeedAndSaveToDatabase: feed not found for ${url}`);
+  }
+
+  return feed;
+};
+
+export const handleRequestRSSFeed = async (feed: Feed): Promise<FeedObject> => {
+  timerManager.start('handleRequestRSSFeed');
   const feedLogService = new FeedLogService();
   let parsedFeed: FeedObject | null = null;
   
@@ -38,6 +69,8 @@ export const handleGetRSSFeed = async (feed: Feed): Promise<FeedObject> => {
     return throwRequestError('parsedFeed no data found');
   }
 
+  timerManager.end('handleRequestRSSFeed');
+
   return parsedFeed;
 };
 
@@ -46,7 +79,6 @@ export const handleParsedFeed = async (parsedFeed: FeedObject, feed: Feed): Prom
   if (!checkIfFeedFlagStatusShouldParse(feed.feed_flag_status.id)) {
     throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not None or AlwaysAllow for ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
   }
-
 
   checkIfFeedIsParsing(feed);
 

@@ -6,7 +6,7 @@ import { compatItemEnclosureDtos } from "@parser/lib/compat/partytime/item";
 export const handleParsedItemEnclosure = async (
   parsedItem: Episode,
   item: Item,
-  transactionalEntityManager: EntityManager
+  transactionalEntityManager?: EntityManager
 ) => {
   const itemEnclosureService = new ItemEnclosureService(transactionalEntityManager);
   const itemEnclosureDtos = compatItemEnclosureDtos(parsedItem);

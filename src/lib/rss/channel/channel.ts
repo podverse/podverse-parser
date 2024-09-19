@@ -1,5 +1,7 @@
 import { FeedObject } from "podcast-partytime";
-import { AppDataSource, Channel, ChannelService, ChannelSeasonIndex } from "podverse-orm";
+import { timerManager } from "podverse-helpers";
+import { AppDataSource, Channel, ChannelService, ChannelSeasonIndex, EntityManager } from "podverse-orm";
+import { config } from "@parser/config";
 import { compatChannelDto } from "@parser/lib/compat/partytime/channel";
 import { handleParsedChannelAbout } from "@parser/lib/rss/channel/channelAbout";
 import { handleParsedChannelChat } from "@parser/lib/rss/channel/channelChat";
@@ -17,39 +19,56 @@ import { handleParsedChannelTxt } from "@parser/lib/rss/channel/channelTxt";
 import { handleParsedChannelValue } from "@parser/lib/rss/channel/channelValue";
 
 export const handleParsedChannel = async (parsedFeed: FeedObject, channel: Channel, channelSeasonIndex: ChannelSeasonIndex) => {
+  timerManager.start('handleParsedChannel');
+
   const channelService = new ChannelService();
   const channelDto = compatChannelDto(parsedFeed);
   await channelService.update(channel.id, channelDto);
   
   // TODO: add channelCategory support
   
-  await AppDataSource.manager.transaction(async transactionalEntityManager => {
-    await handleParsedChannelAbout(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelChat(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelDescription(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelFunding(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelImage(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelLicense(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelLocation(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelPerson(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelPodroll(parsedFeed, channel, transactionalEntityManager);
-  
-    // PTDO: add channelPublisher support
-    // const channelPublisherService = new ChannelPublisherService();
-    // const channelPublisherRemoteItemService = new ChannelPublisherRemoteItemService();
-  
-    // const channelPublisherRemoteItemDtos = compatChannelPublisherRemoteItemDtos(parsedFeed);
-    // if (channelPublisherRemoteItemDtos.length > 0) {
-    //   const channel_publisher = await channelPublisherService.update(channel);
-    //   await channelPublisherRemoteItemService.updateMany(channel_publisher, channelPodrollRemoteItemDtos);
-    // } else {
-    //   await channelPublisherService.delete(channel);
-    // }
-  
-    await handleParsedChannelRemoteItem(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelSocialInteract(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelTrailer(parsedFeed, channel, channelSeasonIndex, transactionalEntityManager);
-    await handleParsedChannelTxt(parsedFeed, channel, transactionalEntityManager);
-    await handleParsedChannelValue(parsedFeed, channel, transactionalEntityManager);
-  });
+  if (config.shouldLogTimer) {
+    await handleParsingTables(parsedFeed, channel, channelSeasonIndex);
+  } else {
+    await AppDataSource.manager.transaction(async transactionalEntityManager => {
+      await handleParsingTables(parsedFeed, channel, channelSeasonIndex, transactionalEntityManager);
+    });
+  }
+
+  timerManager.end('handleParsedChannel');
+};
+
+const handleParsingTables = async (
+  parsedFeed: FeedObject,
+  channel: Channel,
+  channelSeasonIndex: ChannelSeasonIndex,
+  transactionalEntityManager?: EntityManager
+) => {
+  await handleParsedChannelAbout(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelChat(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelDescription(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelFunding(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelImage(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelLicense(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelLocation(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelPerson(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelPodroll(parsedFeed, channel, transactionalEntityManager);
+
+  // PTDO: add channelPublisher support
+  // const channelPublisherService = new ChannelPublisherService();
+  // const channelPublisherRemoteItemService = new ChannelPublisherRemoteItemService();
+
+  // const channelPublisherRemoteItemDtos = compatChannelPublisherRemoteItemDtos(parsedFeed);
+  // if (channelPublisherRemoteItemDtos.length > 0) {
+  //   const channel_publisher = await channelPublisherService.update(channel);
+  //   await channelPublisherRemoteItemService.updateMany(channel_publisher, channelPodrollRemoteItemDtos);
+  // } else {
+  //   await channelPublisherService.delete(channel);
+  // }
+
+  await handleParsedChannelRemoteItem(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelSocialInteract(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelTrailer(parsedFeed, channel, channelSeasonIndex, transactionalEntityManager);
+  await handleParsedChannelTxt(parsedFeed, channel, transactionalEntityManager);
+  await handleParsedChannelValue(parsedFeed, channel, transactionalEntityManager);
 };

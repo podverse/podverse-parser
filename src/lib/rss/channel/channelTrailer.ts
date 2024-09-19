@@ -1,4 +1,5 @@
 import { FeedObject } from "podcast-partytime";
+import { timerManager } from "podverse-helpers";
 import { Channel, ChannelSeason, ChannelTrailerDto, ChannelTrailerService, EntityManager } from "podverse-orm";
 import { compatChannelTrailerDtos } from "@parser/lib/compat/partytime/channel";
 
@@ -6,8 +7,9 @@ export const handleParsedChannelTrailer = async (
   parsedFeed: FeedObject,
   channel: Channel,
   channelSeasonIndex: Record<number, ChannelSeason>,
-  transactionalEntityManager: EntityManager
+  transactionalEntityManager?: EntityManager
 ) => {
+  timerManager.start("handleParsedChannelTrailer");
   const channelTrailerService = new ChannelTrailerService(transactionalEntityManager);
   const channelTrailerDtos = compatChannelTrailerDtos(parsedFeed);
 
@@ -28,4 +30,5 @@ export const handleParsedChannelTrailer = async (
   } else {
     await channelTrailerService.deleteAll(channel);
   }
+  timerManager.end("handleParsedChannelTrailer");
 };

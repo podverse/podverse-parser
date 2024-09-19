@@ -8,7 +8,7 @@ export const handleParsedItemSeason = async (
   parsedItem: Episode,
   item: Item,
   channelSeasonIndex: ChannelSeasonIndex,
-  transactionalEntityManager: EntityManager
+  transactionalEntityManager?: EntityManager
 ) => {
   const itemSeasonService = new ItemSeasonService(transactionalEntityManager);
   const itemSeasonDto = compatItemSeasonDto(parsedItem);

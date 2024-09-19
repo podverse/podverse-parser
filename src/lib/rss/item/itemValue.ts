@@ -7,7 +7,7 @@ import { compatItemValueDtos } from "@parser/lib/compat/partytime/item";
 export const handleParsedItemValue = async (
   parsedItem: Episode,
   item: Item,
-  transactionalEntityManager: EntityManager
+  transactionalEntityManager?: EntityManager
 ) => {
   const itemValueService = new ItemValueService(transactionalEntityManager);
   const itemValueDtos = compatItemValueDtos(parsedItem);

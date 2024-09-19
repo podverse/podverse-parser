@@ -1,12 +1,14 @@
 import { FeedObject } from "podcast-partytime";
+import { timerManager } from "podverse-helpers";
 import { Channel, ChannelPodrollService, ChannelPodrollRemoteItemService, EntityManager } from "podverse-orm";
 import { compatChannelPodrollRemoteItemDtos } from "@parser/lib/compat/partytime/channel";
 
 export const handleParsedChannelPodroll = async (
   parsedFeed: FeedObject,
   channel: Channel,
-  transactionalEntityManager: EntityManager
+  transactionalEntityManager?: EntityManager
 ) => {
+  timerManager.start("handleParsedChannelPodroll");
   const channelPodrollService = new ChannelPodrollService(transactionalEntityManager);
   const channelPodrollDto = {};
   const channelPodrollRemoteItemService = new ChannelPodrollRemoteItemService(transactionalEntityManager);
@@ -18,4 +20,5 @@ export const handleParsedChannelPodroll = async (
   } else {
     await channelPodrollService.delete(channel);
   }
+  timerManager.end("handleParsedChannelPodroll");
 };

@@ -1,12 +1,14 @@
 import { FeedObject } from "podcast-partytime";
+import { timerManager } from "podverse-helpers";
 import { Channel, ChannelValueService, ChannelValueRecipientService, EntityManager } from "podverse-orm";
 import { compatChannelValueDtos } from "@parser/lib/compat/partytime/channel";
 
 export const handleParsedChannelValue = async (
   parsedFeed: FeedObject,
   channel: Channel,
-  transactionalEntityManager: EntityManager
+  transactionalEntityManager?: EntityManager
 ) => {
+  timerManager.start("handleParsedChannelValue");
   const channelValueService = new ChannelValueService(transactionalEntityManager);
   const channelValueDtos = compatChannelValueDtos(parsedFeed);
   const channelValueRecipientService = new ChannelValueRecipientService(transactionalEntityManager);
@@ -27,4 +29,5 @@ export const handleParsedChannelValue = async (
   } else {
     await channelValueService.deleteAll(channel);
   }
+  timerManager.end("handleParsedChannelValue");
 };
