@@ -1,7 +1,6 @@
 import { logger } from "podverse-helpers";
-import { Channel, ChannelPodrollRemoteItemService, ChannelPodrollService, ChannelPublisherRemoteItemService, ChannelPublisherService, ChannelRemoteItemService, ChannelService, ItemService, ItemValueTimeSplitRemoteItemService } from "podverse-orm";
+import { Channel, ChannelPodrollRemoteItemService, ChannelPodrollService, ChannelPublisherRemoteItemService, ChannelPublisherService, ChannelRemoteItemService, ChannelService, FeedService, ItemService, ItemValueTimeSplitRemoteItemService } from "podverse-orm";
 import { podcastIndexService } from '@parser/factories/podcastIndex';
-import { handleGetRSSFeed } from '@parser/lib/rss/feed/feed';
 import { parseRSSFeedAndSaveToDatabase } from '@parser/lib/rss/parser';
 
 type PIFeedWithPodcastGuidData = {
@@ -23,11 +22,9 @@ const handleRemoteItemsFeedParsing = async (feedGuidsToParse: string[]) => {
   }
 
   for (const piFeedData of piFeedDatas) {
-    // Only parse if the feed has not been updated within the last hour.
-    // This is to prevent circular parsing by following remote items to other remote items.
-    const feed = await handleGetRSSFeed(piFeedData.url, piFeedData.id);
-
-    if (!feed.updated_at || feed.updated_at.getTime() < Date.now() - 3600000) {
+    const feedService = new FeedService();
+    let feed = await feedService.getByUrlAndPodcastIndexId({ url: piFeedData.url, podcast_index_id: piFeedData.id });
+    if (!feed) {
       logger.info(`handleRemoteItemsFeedParsing: ${piFeedData.url} ${piFeedData.id}`);
       await parseRSSFeedAndSaveToDatabase(piFeedData.url, piFeedData.id);
     }
