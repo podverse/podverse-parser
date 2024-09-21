@@ -6,6 +6,7 @@ import { handleParsedItems } from './item/item';
 import { handleParsedChannelSeasons } from './channel/channelSeason';
 import { handleParsedLiveItems } from './liveItem/liveItem';
 import { handleRequestRSSFeed, handleParsedFeed, handleGetRSSFeed } from './feed/feed';
+import { handleAllRemoteItemsFeedParsing } from './remoteItemParser';
 
 /*
   NOTE: All RSS feeds that have a podcast_index_id will be saved to the database.
@@ -41,6 +42,7 @@ export const getAndParseRSSFeed = async (url: string) => {
 export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_id: number) => {  
   const feedService = new FeedService();
   let feed = null;
+  let channel = null;
   
   try {
     logger.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
@@ -51,7 +53,7 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     await feedService.update(feed.id, { is_parsing: new Date() });
     
     const channelService = new ChannelService();
-    const channel = await channelService.getOrCreateByPodcastIndexId({ feed, podcast_index_id });
+    channel = await channelService.getOrCreateByPodcastIndexId({ feed, podcast_index_id });
     
     // ChannelSeason must be parsed before anything else, because the channel season rows
     // need to be created for other data to have a foreign key to them.
@@ -70,9 +72,9 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
       await handleParsedLiveItems(parsedFeed.podcastLiveItems, channel, channelSeasonIndex);
     }
     
-    // TODO: handle new item notifications
+    // // TODO: handle new item notifications
     
-    // TODO: handle new live_item notifications
+    // // TODO: handle new live_item notifications
     
     const feedLogService = new FeedLogService();
     await feedLogService.update(feed, { last_finished_parse_time: new Date() });
@@ -85,5 +87,10 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     }
   }
 
+  if (channel) {
+    await handleAllRemoteItemsFeedParsing(channel);
+  }
+
   return;
 };
+

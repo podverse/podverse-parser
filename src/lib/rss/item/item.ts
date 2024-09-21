@@ -250,7 +250,7 @@ export const handleParsedItem = async ({
   timerAccumulator.handleParsedItemTxt = timerManager.end('handleParsedItemTxt', preventTimerLog) + timerAccumulator.handleParsedItemTxt;
 
   timerManager.start('handleParsedItemValue');
-  await handleParsedItemValue(parsedItem, item, transactionalEntityManager);
+  await handleParsedItemValue(parsedItem, item, channel, transactionalEntityManager);
   timerAccumulator.handleParsedItemValue = timerManager.end('handleParsedItemValue', preventTimerLog) + timerAccumulator.handleParsedItemValue;
 
   return item;

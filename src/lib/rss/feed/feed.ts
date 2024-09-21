@@ -19,8 +19,6 @@ export const handleGetRSSFeed = async (url: string, podcast_index_id: number): P
     }
   }
 
-  // TODO: we may not want to create feeds in this helper in production
-  // but i'm adding it here for stage testing.
   if (!feed) {
     feed = await feedService.getOrCreate({ url, podcast_index_id });
   }

@@ -1,12 +1,15 @@
 import { Episode } from "podcast-partytime";
 import { EntityManager, Item, ItemValueService, ItemValueRecipientService, ItemValueTimeSplitService,
-  ItemValueTimeSplitRecipientService, ItemValueTimeSplitRemoteItemService
+  ItemValueTimeSplitRecipientService, ItemValueTimeSplitRemoteItemService,
+  ChannelService,
+  Channel
 } from "podverse-orm";
 import { compatItemValueDtos } from "@parser/lib/compat/partytime/item";
 
 export const handleParsedItemValue = async (
   parsedItem: Episode,
   item: Item,
+  channel: Channel,
   transactionalEntityManager?: EntityManager
 ) => {
   const itemValueService = new ItemValueService(transactionalEntityManager);
@@ -30,7 +33,17 @@ export const handleParsedItemValue = async (
       }
 
       const itemValueTimeSplitDtos = itemValueDto.item_value_time_splits;
+
       if (itemValueTimeSplitDtos.length > 0) {
+        if (!channel.has_value_time_splits) {
+          const channelService = new ChannelService();
+          await channelService.update(channel.id, {
+            title: channel.title,
+            sortable_title: channel.sortable_title,
+            has_value_time_splits: true
+          });
+        }
+
         for (const itemValueTimeSplitDto of itemValueTimeSplitDtos) {
           const item_value_time_split = await itemValueTimeSplitService.update(item_value, itemValueTimeSplitDto.meta);
 

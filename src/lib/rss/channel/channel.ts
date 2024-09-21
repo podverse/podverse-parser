@@ -12,6 +12,7 @@ import { handleParsedChannelLicense } from "@parser/lib/rss/channel/channelLicen
 import { handleParsedChannelLocation } from "@parser/lib/rss/channel/channelLocation";
 import { handleParsedChannelPerson } from "@parser/lib/rss/channel/channelPerson";
 import { handleParsedChannelPodroll } from "@parser/lib/rss/channel/channelPodroll";
+import { handleParsedChannelPublisher } from "@parser/lib/rss/channel/channelPublisher";
 import { handleParsedChannelRemoteItem } from "@parser/lib/rss/channel/channelRemoteItem";
 import { handleParsedChannelSocialInteract } from "@parser/lib/rss/channel/channelSocialInteract";
 import { handleParsedChannelTrailer } from "@parser/lib/rss/channel/channelTrailer";
@@ -53,19 +54,7 @@ const handleParsingTables = async (
   await handleParsedChannelLocation(parsedFeed, channel, transactionalEntityManager);
   await handleParsedChannelPerson(parsedFeed, channel, transactionalEntityManager);
   await handleParsedChannelPodroll(parsedFeed, channel, transactionalEntityManager);
-
-  // PTDO: add channelPublisher support
-  // const channelPublisherService = new ChannelPublisherService();
-  // const channelPublisherRemoteItemService = new ChannelPublisherRemoteItemService();
-
-  // const channelPublisherRemoteItemDtos = compatChannelPublisherRemoteItemDtos(parsedFeed);
-  // if (channelPublisherRemoteItemDtos.length > 0) {
-  //   const channel_publisher = await channelPublisherService.update(channel);
-  //   await channelPublisherRemoteItemService.updateMany(channel_publisher, channelPodrollRemoteItemDtos);
-  // } else {
-  //   await channelPublisherService.delete(channel);
-  // }
-
+  await handleParsedChannelPublisher(parsedFeed, channel, transactionalEntityManager);
   await handleParsedChannelRemoteItem(parsedFeed, channel, transactionalEntityManager);
   await handleParsedChannelSocialInteract(parsedFeed, channel, transactionalEntityManager);
   await handleParsedChannelTrailer(parsedFeed, channel, channelSeasonIndex, transactionalEntityManager);

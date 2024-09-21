@@ -1,8 +1,7 @@
 import { FeedObject, Phase4Medium } from "podcast-partytime";
-import { DATABASE_CONSTANTS } from "podverse-helpers";
 import { Phase4PodcastImage } from "podcast-partytime/dist/parser/phase/phase-4";
-import { createSortableTitle, getBooleanOrNull } from "podverse-helpers";
-import { getChannelItunesTypeItunesTypeEnumValue, getMediumEnumValue } from "podverse-orm";
+import { createSortableTitle, DATABASE_CONSTANTS, getBooleanOrNull, getMediumEnumValue } from "podverse-helpers";
+import { getChannelItunesTypeItunesTypeEnumValue } from "podverse-orm";
 import { compatChannelValue } from "@parser/lib/compat/partytime/value";
 
 export const compatChannelDto = (parsedFeed: FeedObject) => ({
@@ -147,7 +146,6 @@ export const compatChannelPersonDtos = (parsedFeed: FeedObject) => {
 
 export const compatChannelPodrollRemoteItemDtos = (parsedFeed: FeedObject) => {
   const dtos = [];
-
   if (Array.isArray(parsedFeed.podroll)) {
     for (const ri of parsedFeed.podroll) {
       if (ri.feedGuid) {
@@ -166,18 +164,14 @@ export const compatChannelPodrollRemoteItemDtos = (parsedFeed: FeedObject) => {
 
 export const compatChannelPublisherRemoteItemDtos = (parsedFeed: FeedObject) => {
   const dtos = [];
-
-  if (Array.isArray(parsedFeed.podroll)) {
-    for (const ri of parsedFeed.podroll) {
-      if (ri.feedGuid) {
-        dtos.push({
-          feed_guid: ri.feedGuid.slice(0, DATABASE_CONSTANTS.varchar_guid),
-          feed_url: ri.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
-          item_guid: null,
-          title: /* PTDO: ri.title || */ null
-        });
-      }
-    }
+  const publisherRemoteItem = parsedFeed.podcastPublisher;
+  if (publisherRemoteItem?.feedGuid) {
+    dtos.push({
+      feed_guid: publisherRemoteItem.feedGuid.slice(0, DATABASE_CONSTANTS.varchar_guid),
+      feed_url: publisherRemoteItem.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+      item_guid: null,
+      title: /* PTDO: ri.title || */ null
+    });
   }
 
   return dtos;

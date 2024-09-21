@@ -1,0 +1,103 @@
+import { logger } from "podverse-helpers";
+import { Channel, ChannelPodrollRemoteItemService, ChannelPodrollService, ChannelPublisherRemoteItemService, ChannelPublisherService, ChannelRemoteItemService, ChannelService, ItemService, ItemValueTimeSplitRemoteItemService } from "podverse-orm";
+import { podcastIndexService } from '@parser/factories/podcastIndex';
+import { handleGetRSSFeed } from '@parser/lib/rss/feed/feed';
+import { parseRSSFeedAndSaveToDatabase } from '@parser/lib/rss/parser';
+
+type PIFeedWithPodcastGuidData = {
+  id: number;
+  url: string;
+}
+
+const handleRemoteItemsFeedParsing = async (feedGuidsToParse: string[]) => {
+  const piFeedDatas: PIFeedWithPodcastGuidData[] = [];
+  for (const feedGuid of feedGuidsToParse) {
+    const piFeedDataResponse = await podcastIndexService.getPodcastByGuid(feedGuid);
+    if (piFeedDataResponse?.feed?.id && piFeedDataResponse?.feed?.url) {
+      const piFeedData: PIFeedWithPodcastGuidData = {
+        id: piFeedDataResponse.feed.id,
+        url: piFeedDataResponse.feed.url
+      };
+      piFeedDatas.push(piFeedData);
+    }
+  }
+
+  for (const piFeedData of piFeedDatas) {
+    // Only parse if the feed has not been updated within the last hour.
+    // This is to prevent circular parsing by following remote items to other remote items.
+    const feed = await handleGetRSSFeed(piFeedData.url, piFeedData.id);
+
+    if (!feed.updated_at || feed.updated_at.getTime() < Date.now() - 3600000) {
+      logger.info(`handleRemoteItemsFeedParsing: ${piFeedData.url} ${piFeedData.id}`);
+      await parseRSSFeedAndSaveToDatabase(piFeedData.url, piFeedData.id);
+    }
+  }
+};
+
+export const handleAllRemoteItemsFeedParsing = async (channel: Channel) => {
+  // make sure channel has latest data
+  const channelService = new ChannelService();
+  const latestChannel = await channelService.get(channel.id);
+  await handleRemoteItemsPodrollParsing(channel);
+  await handleRemoteItemsPublisherParsing(channel);
+  await handleRemoteItemsChannelParsing(channel);
+  await handleRemoteItemsItemValueTimeSplitParsing(latestChannel);
+};
+
+const handleRemoteItemsPodrollParsing = async (channel: Channel) => {
+  const channelPodrollService = new ChannelPodrollService();
+  const channelPodroll = await channelPodrollService.get(channel);
+  if (channelPodroll) {
+    const channelPodrollRemoteItemService = new ChannelPodrollRemoteItemService();
+    const channelPodrollRemoteItems = await channelPodrollRemoteItemService.getAll(channelPodroll);
+    const feedGuidsToParse = channelPodrollRemoteItems.map((remoteItem) => remoteItem.feed_guid);
+    await handleRemoteItemsFeedParsing(feedGuidsToParse);
+  }
+};
+
+const handleRemoteItemsPublisherParsing = async (channel: Channel) => {
+  const channelPublisherService = new ChannelPublisherService();
+  const channelPublisher = await channelPublisherService.get(channel);
+  if (channelPublisher) {
+    const channelPublisherRemoteItemService = new ChannelPublisherRemoteItemService();
+    const channelPublisherRemoteItems = await channelPublisherRemoteItemService.getAll(channelPublisher);
+    const feedGuidsToParse = channelPublisherRemoteItems.map((remoteItem) => remoteItem.feed_guid);
+    await handleRemoteItemsFeedParsing(feedGuidsToParse);
+  }
+};
+
+const handleRemoteItemsChannelParsing = async (channel: Channel) => {
+  const channelRemoteItemService = new ChannelRemoteItemService();
+  const channelRemoteItems = await channelRemoteItemService.getAll(channel);
+  const feedGuidsToParse = channelRemoteItems.map((remoteItem) => remoteItem.feed_guid);
+  await handleRemoteItemsFeedParsing(feedGuidsToParse);
+};
+
+const handleRemoteItemsItemValueTimeSplitParsing = async (channel: Channel) => {
+  if (channel.has_value_time_splits) {
+    const itemService = new ItemService();
+    const items = await itemService.getAllItemsByChannel(channel, {
+      relations: [
+        'item_values',
+        'item_values.item_value_time_splits',
+        'item_values.item_value_time_splits.item_value_time_split_remote_item'
+      ]
+    });
+    for (const item of items) {
+      if (item) {
+        if (item.item_values?.length > 0) {
+          for (const itemValue of item.item_values) {
+            if (itemValue.item_value_time_splits?.length > 0) {
+              for (const itemValueTimeSplit of itemValue.item_value_time_splits) {
+                if (itemValueTimeSplit.item_value_time_split_remote_item) {
+                  const feedGuid = itemValueTimeSplit.item_value_time_split_remote_item.feed_guid;
+                  await handleRemoteItemsFeedParsing([feedGuid]);
+                }
+              }
+            }
+          }
+        }
+      }   
+    }
+  }
+};
