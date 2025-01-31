@@ -32,7 +32,6 @@ const handleRemoteItemsFeedParsing = async (feedGuidsToParse: string[]) => {
 };
 
 export const handleAllRemoteItemsFeedParsing = async (channel: Channel) => {
-  // make sure channel has latest data
   const channelService = new ChannelService();
   const latestChannel = await channelService.get(channel.id);
   await handleRemoteItemsPodrollParsing(channel);
