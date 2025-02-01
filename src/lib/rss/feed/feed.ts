@@ -1,6 +1,7 @@
 import { FeedObject } from "podcast-partytime";
 import { throwRequestError, timerManager } from "podverse-helpers";
 import { checkIfFeedFlagStatusShouldParse, Feed, FeedService, FeedLogService } from "podverse-orm";
+import { config } from "@parser/config";
 import { getParsedFeedMd5Hash } from "../hash/parsedFeed";
 import { getAndParseRSSFeed } from "../parser";
 
@@ -82,7 +83,10 @@ export const handleParsedFeed = async (parsedFeed: FeedObject, feed: Feed): Prom
 
   const currentFeedFileHash = getParsedFeedMd5Hash(parsedFeed);
 
-  if (feed.last_parsed_file_hash === currentFeedFileHash) {
+  if (
+    config.nodeEnv === 'production' &&
+    feed.last_parsed_file_hash === currentFeedFileHash
+  ) {
     throw new Error(`Feed ${feed.id} has no changes since last parsed.`);
   }
 

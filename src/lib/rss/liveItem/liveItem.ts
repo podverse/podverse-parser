@@ -1,6 +1,6 @@
 import { chunkArray, logger } from "podverse-helpers";
 import { Phase4PodcastLiveItem } from "podcast-partytime/dist/parser/phase/phase-4";
-import { AppDataSource, Channel, ChannelSeasonIndex, ItemService, LiveItemService } from "podverse-orm";
+import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, ItemService, LiveItemService } from "podverse-orm";
 import { compatLiveItemsDtos } from "@parser/lib/compat/partytime/liveItem";
 import { createItemTimerAccumulator, handleParsedItem } from "../item/item";
 import { config } from "@parser/config";
@@ -16,7 +16,7 @@ export const handleParsedLiveItems = async (parsedLiveItems: Phase4PodcastLiveIt
 
   const liveItemObjDtosBatchs = chunkArray(liveItemObjDtos, 50);
   for (const liveItemObjDtosBatch of liveItemObjDtosBatchs) {
-    await AppDataSource.manager.transaction(async transactionalEntityManager => {
+    await AppDataSourceReadWrite.manager.transaction(async transactionalEntityManager => {
       for (const liveItemObjDto of liveItemObjDtosBatch) {
         // PTDO: how to make any unnecessary?
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

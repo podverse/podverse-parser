@@ -1,6 +1,6 @@
 import { Episode } from "podcast-partytime";
 import { chunkArray, DATABASE_CONSTANTS, logger, timerManager } from "podverse-helpers";
-import { AppDataSource, Channel, ChannelSeasonIndex, EntityManager, ItemService } from "podverse-orm";
+import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, EntityManager, ItemService } from "podverse-orm";
 import { compatItemDto } from "@parser/lib/compat/partytime/item";
 import { handleParsedItemAbout } from "@parser/lib/rss/item/itemAbout";
 import { handleParsedItemChaptersFeed } from "@parser/lib/rss/item/itemChaptersFeed";
@@ -120,7 +120,7 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
         timerAccumulator
       });
     } else {
-      await AppDataSource.manager.transaction(async transactionalEntityManager => {
+      await AppDataSourceReadWrite.manager.transaction(async transactionalEntityManager => {
         await handleParsedItemBatch({
           parsedItemBatch,
           channel,

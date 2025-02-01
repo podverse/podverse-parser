@@ -1,6 +1,6 @@
 import { FeedObject } from "podcast-partytime";
 import { timerManager } from "podverse-helpers";
-import { AppDataSource, Channel, ChannelService, ChannelSeasonIndex, EntityManager } from "podverse-orm";
+import { AppDataSourceReadWrite, Channel, ChannelService, ChannelSeasonIndex, EntityManager } from "podverse-orm";
 import { config } from "@parser/config";
 import { compatChannelDto } from "@parser/lib/compat/partytime/channel";
 import { handleParsedChannelAbout } from "@parser/lib/rss/channel/channelAbout";
@@ -31,7 +31,7 @@ export const handleParsedChannel = async (parsedFeed: FeedObject, channel: Chann
   if (config.shouldLogTimer) {
     await handleParsingTables(parsedFeed, channel, channelSeasonIndex);
   } else {
-    await AppDataSource.manager.transaction(async transactionalEntityManager => {
+    await AppDataSourceReadWrite.manager.transaction(async transactionalEntityManager => {
       await handleParsingTables(parsedFeed, channel, channelSeasonIndex, transactionalEntityManager);
     });
   }
