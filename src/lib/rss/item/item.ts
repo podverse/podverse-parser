@@ -20,12 +20,15 @@ import { handleParsedItemValue } from "@parser/lib/rss/item/itemValue";
 import { handleParsedItemChat } from "@parser/lib/rss/item/itemChat";
 import { config } from "@parser/config";
 
-const removeDuplicates = (parsedItems: Episode[]): Episode[] => {
-  const seen = new Set<string>();
+const removeItemDuplicates = (parsedItems: Episode[]): Episode[] => {
+  const seenEnclosureUrls = new Set<string>();
+  const seenGuids = new Set<string>();
   return parsedItems.reduce((acc, item) => {
     const enclosureUrl = item.enclosure.url.slice(0, DATABASE_CONSTANTS.varchar_url);
-    if (!seen.has(enclosureUrl)) {
-      seen.add(enclosureUrl);
+    const guid = item.guid;
+    if (!seenEnclosureUrls.has(enclosureUrl) && !seenGuids.has(guid)) {
+      seenEnclosureUrls.add(enclosureUrl);
+      seenGuids.add(guid);
       acc.push(item);
     }
     return acc;
@@ -103,7 +106,11 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
   const existingItemIds = existingItems.map(item => item.id);
   const updatedItemIds: number[] = [];
 
-  const uniqueParsedItems = removeDuplicates(parsedItems);
+  const uniqueParsedItems = removeItemDuplicates(parsedItems);
+
+  console.log(`uniqueParsedItems: ${uniqueParsedItems.length}`);
+  // console.log('uniqueParsedItems', uniqueParsedItems);
+
   const parsedItemBatchs = chunkArray(uniqueParsedItems, 100);
 
   const timerAccumulator = createItemTimerAccumulator();
@@ -176,6 +183,7 @@ export const handleParsedItem = async ({
   
   timerManager.start('updateItem');
   const item = await itemService.update(channel, itemDto);
+  console.log('item', item);
   timerAccumulator.updateItem = timerManager.end('updateItem', true) + timerAccumulator.updateItem;
 
   const preventTimerLog = true;
