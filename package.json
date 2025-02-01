@@ -11,7 +11,7 @@
     "build:watch": "nodemon --watch 'src' --watch $(realpath node_modules/podverse-helpers) --watch $(realpath node_modules/podverse-orm) --delay 500ms -x \"npm run build\"",
     "build": "tsc",
     "lint": "eslint ./src --ext .ts",
-    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
     "start": "ts-node ./dist/index.js"
   },
   "author": "",
