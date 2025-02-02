@@ -1,6 +1,6 @@
 import { FeedObject, Phase4Medium } from "podcast-partytime";
 import { Phase4PodcastImage } from "podcast-partytime/dist/parser/phase/phase-4";
-import { createSortableTitle, DATABASE_CONSTANTS, getBooleanOrNull, getMediumEnumValue } from "podverse-helpers";
+import { createSortableTitle, DATABASE_CONSTANTS, getBooleanOrNull, getCategoryEnumValue, getMediumEnumValue } from "podverse-helpers";
 import { getChannelItunesTypeItunesTypeEnumValue } from "podverse-orm";
 import { compatChannelValue } from "@parser/lib/compat/partytime/value";
 
@@ -31,6 +31,18 @@ export const compatChannelAboutDto = (parsedFeed: FeedObject) => ({
     return latest;
   }, new Date(0)) || null
 });
+
+export const compatChannelCategoryDtos = (parsedFeed: FeedObject) => {
+  return parsedFeed.itunesCategory?.map((category) => {
+    let processedCategory = category.toLowerCase();
+    if (processedCategory.includes('>')) {
+      processedCategory = processedCategory.split('>').pop()!.trim();
+    }
+    processedCategory = processedCategory.replace(/&amp;|&/g, 'and').replace(/-/g, '').replace(/\s+/g, '');
+    const category_id = getCategoryEnumValue(processedCategory);
+    return category_id ? { category_id } : null;
+  }).filter(category => category !== null) || [];
+};
 
 export const compatChannelChatDto = (parsedFeed: FeedObject) => {
   if (!parsedFeed.chat) {
