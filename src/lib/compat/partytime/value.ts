@@ -1,5 +1,5 @@
 import { Phase4Value, Phase4ValueRecipient } from "podcast-partytime";
-import { DATABASE_CONSTANTS } from 'podverse-helpers';
+import { DATABASE_CONSTANTS, isValidHttpUrl } from 'podverse-helpers';
 
 export const compatChannelValue = (value: Phase4Value) => {
   return {
@@ -28,7 +28,7 @@ export const compatItemValue = (value: Phase4Value) => {
           item_value_time_splits_recipients: [],
           item_value_time_splits_remote_item: valueTimeSplit.remoteItem ? {
             feed_guid: valueTimeSplit.remoteItem.feedGuid.slice(0, DATABASE_CONSTANTS.varchar_url),
-            feed_url: valueTimeSplit.remoteItem.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_uri) || null,
+            feed_url: isValidHttpUrl(valueTimeSplit.remoteItem.feedUrl) && valueTimeSplit.remoteItem.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_uri) || null,
             item_guid: valueTimeSplit.remoteItem.itemGuid?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
             title: /* PTDO: ri.title || */ null
           } : null

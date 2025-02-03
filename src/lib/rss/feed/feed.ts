@@ -1,6 +1,6 @@
 import { FeedObject } from "podcast-partytime";
 import { throwRequestError, timerManager } from "podverse-helpers";
-import { checkIfFeedFlagStatusShouldParse, Feed, FeedService, FeedLogService } from "podverse-orm";
+import { Feed, FeedService, FeedLogService } from "podverse-orm";
 import { config } from "@parser/config";
 import { getParsedFeedMd5Hash } from "../hash/parsedFeed";
 import { getAndParseRSSFeed } from "../parser";
@@ -74,22 +74,15 @@ export const handleRequestRSSFeed = async (feed: Feed): Promise<FeedObject> => {
 };
 
 export const handleParsedFeed = async (parsedFeed: FeedObject, feed: Feed): Promise<Feed> => {
-  // TODO: move before partytime parsing
-  if (!checkIfFeedFlagStatusShouldParse(feed.feed_flag_status.id)) {
-    throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not None or AlwaysAllow for ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
-  }
-
-  checkIfFeedIsParsing(feed);
-
   const currentFeedFileHash = getParsedFeedMd5Hash(parsedFeed);
 
-  if (
-    config.nodeEnv === 'production' &&
-    feed.last_parsed_file_hash === currentFeedFileHash
-  ) {
-    throw new Error(`Feed ${feed.id} has no changes since last parsed.`);
+  if (config.nodeEnv === 'production') {
+    checkIfFeedIsParsing(feed);
+    if (feed.last_parsed_file_hash === currentFeedFileHash) {
+      throw new Error(`Feed ${feed.id} has no changes since last parsed.`);
+    }
   }
-
+  
   const feedService = new FeedService();
   return feedService.update(feed.id, { last_parsed_file_hash: currentFeedFileHash });
 };
@@ -100,12 +93,8 @@ const checkIfFeedIsParsing = (feed: Feed): void => {
     const parsingDate = new Date(feed.is_parsing);
     const currentDate = new Date();
     const timeDifference = (currentDate.getTime() - parsingDate.getTime()) / (1000 * 60);
-  
-    if (isNaN(parsingDate.getTime())) {
-      throw new Error(`Feed ${feed.id} has an invalid parsing date`);
-    }
-  
-    if (timeDifference <= 30) {
+    
+    if (timeDifference <= 15) {
       throw new Error(`Feed ${feed.id} is already parsing`);
     }
   }

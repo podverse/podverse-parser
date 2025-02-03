@@ -1,12 +1,19 @@
 import type { Episode } from 'podcast-partytime';
 import { Phase4PodcastImage } from 'podcast-partytime/dist/parser/phase/phase-4';
-import { DATABASE_CONSTANTS } from 'podverse-helpers';
+import { DATABASE_CONSTANTS, isValidHttpUrl } from 'podverse-helpers';
 import { getItemItunesEpisodeTypeEnumValue } from 'podverse-orm';
 import { compatItemValue } from './value';
 
-export const compatItemDto = (parsedItem: Episode) => ({
+type CompatItemDtoOptions = {
+  isLiveItem?: boolean;
+}
+
+export const compatItemDto = (parsedItem: Episode, options?: CompatItemDtoOptions) => ({
   guid: parsedItem.guid?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
-  guid_enclosure_url: parsedItem.enclosure.url.slice(0, DATABASE_CONSTANTS.varchar_url),
+  guid_enclosure_url: !options?.isLiveItem
+    && isValidHttpUrl(parsedItem.enclosure.url)
+    && parsedItem.enclosure.url.slice(0, DATABASE_CONSTANTS.varchar_url)
+    || null,
   pubdate: parsedItem.pubDate || null,
   title: parsedItem.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
 });
@@ -14,7 +21,7 @@ export const compatItemDto = (parsedItem: Episode) => ({
 export const compatItemAboutDto = (parsedItem: Episode) => ({
   duration: parsedItem.duration?.toFixed(2) || null,
   explicit: parsedItem.explicit || false,
-  website_link_url: parsedItem.link?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+  website_link_url: isValidHttpUrl(parsedItem.link) && parsedItem.link?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
   item_itunes_episode_type: getItemItunesEpisodeTypeEnumValue(parsedItem.itunesEpisodeType || 'full')
 });
 
@@ -22,7 +29,7 @@ export const compatItemChaptersFeedDto = (parsedItem: Episode) => {
   if (!parsedItem.podcastChapters?.url && !parsedItem.podcastChapters?.type) return null;
   
   return {
-    url: parsedItem.podcastChapters?.url.slice(0, DATABASE_CONSTANTS.varchar_url),
+    url: isValidHttpUrl(parsedItem.podcastChapters?.url) && parsedItem.podcastChapters?.url.slice(0, DATABASE_CONSTANTS.varchar_url),
     type: parsedItem.podcastChapters?.type.slice(0, DATABASE_CONSTANTS.varchar_short)
   };
 };
@@ -72,7 +79,7 @@ export const compatItemEnclosureDtos = (parsedItem: Episode) => {
         "/podverse-parser/node_modules/podcast-partytime/dist/parser/phase/phase-3" but cannot be named.
       */
       const item_enclosure_integrity = (alternativeEnclosure.integrity as any) || null;
-
+      
       const item_enclosure_sources = alternativeEnclosure.source.map(source => ({
         uri: source.uri.slice(0, DATABASE_CONSTANTS.varchar_uri),
         content_type: source.contentType.slice(0, DATABASE_CONSTANTS.varchar_short)
@@ -93,14 +100,14 @@ export const compatItemEnclosureDtos = (parsedItem: Episode) => {
 
 export const compatItemImageDtos = (parsedItem: Episode) => {
   const dtos = [];
-  if (parsedItem.itunesImage) {
+  if (isValidHttpUrl(parsedItem.itunesImage)) {
     dtos.push({
-      url: parsedItem.itunesImage.slice(0, DATABASE_CONSTANTS.varchar_url),
+      url: parsedItem?.itunesImage?.slice(0, DATABASE_CONSTANTS.varchar_url),
       image_width_size: null
     });
-  } else if (parsedItem.image) {
+  } else if (isValidHttpUrl(parsedItem.image)) {
     dtos.push({
-      url: parsedItem.image.slice(0, DATABASE_CONSTANTS.varchar_url),
+      url: parsedItem?.image?.slice(0, DATABASE_CONSTANTS.varchar_url),
       image_width_size: null
     });
   }
@@ -129,7 +136,7 @@ export const compatItemLicenseDto = (parsedItem: Episode) => {
   }
   return {
     identifier: parsedItem.license.identifier.slice(0, DATABASE_CONSTANTS.varchar_normal),
-    url: parsedItem.license.url?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
+    url: isValidHttpUrl(parsedItem.license.url) && parsedItem.license.url?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
   };
 };
 
@@ -155,8 +162,8 @@ export const compatItemPersonDtos = (parsedItem: Episode) => {
           name: p.name.slice(0, DATABASE_CONSTANTS.varchar_normal),
           role: p.role?.toLowerCase()?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
           person_group: p.group?.toLowerCase()?.slice(0, DATABASE_CONSTANTS.varchar_normal) || 'cast',
-          img: p.img?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
-          href: p.href?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
+          img: isValidHttpUrl(p.img) && p.img?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+          href: isValidHttpUrl(p.href) && p.href?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
         });
       }
     }
@@ -197,7 +204,7 @@ export const compatItemSocialInteractDtos = (parsedItem: Episode) => {
         protocol: ps.platform.slice(0, DATABASE_CONSTANTS.varchar_short),
         uri: ps.url.slice(0, DATABASE_CONSTANTS.varchar_uri),
         account_id: ps.id?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
-        account_url: ps.profileUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+        account_url: isValidHttpUrl(ps.profileUrl) && ps.profileUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
         priority: ps.priority || null
       });
     }
@@ -227,12 +234,14 @@ export const compatItemTranscriptDtos = (parsedItem: Episode) => {
 
   if (parsedItem?.podcastTranscripts?.length) {
     for (const t of parsedItem.podcastTranscripts) {
-      dtos.push({
-        url: t.url.slice(0, DATABASE_CONSTANTS.varchar_url),
-        type: t.type.slice(0, DATABASE_CONSTANTS.varchar_short),
-        language: t.language?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
-        rel: t.rel?.slice(0, 50) || null
-      });
+      if (isValidHttpUrl(t.url)) {
+        dtos.push({
+          url: t.url.slice(0, DATABASE_CONSTANTS.varchar_url),
+          type: t.type.slice(0, DATABASE_CONSTANTS.varchar_short),
+          language: t.language?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
+          rel: t.rel?.slice(0, 50) || null
+        });
+      }
     }
   }
 

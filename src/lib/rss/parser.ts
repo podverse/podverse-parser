@@ -1,6 +1,6 @@
 import { parseFeed } from 'podcast-partytime';
 import { logError, logger, request, timerManager } from 'podverse-helpers';
-import { ChannelService, ChannelSeasonService, FeedLogService, FeedService } from 'podverse-orm';
+import { ChannelService, ChannelSeasonService, FeedLogService, FeedService, checkIfFeedFlagStatusShouldParse } from 'podverse-orm';
 import { handleParsedChannel } from "@parser/lib/rss/channel/channel";
 import { handleParsedItems } from './item/item';
 import { handleParsedChannelSeasons } from './channel/channelSeason';
@@ -47,6 +47,10 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
   try {
     logger.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
     feed = await handleGetRSSFeed(url, podcast_index_id);
+
+    if (!checkIfFeedFlagStatusShouldParse(feed.feed_flag_status.id)) {
+      throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not None or AlwaysAllow for ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
+    }
     
     const parsedFeed = await handleRequestRSSFeed(feed);
     feed = await handleParsedFeed(parsedFeed, feed);

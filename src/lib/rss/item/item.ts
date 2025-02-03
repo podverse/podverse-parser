@@ -77,6 +77,7 @@ type HandleParsedItem = {
   channelSeasonIndex: ChannelSeasonIndex
   transactionalEntityManager?: EntityManager
   timerAccumulator: ItemTimerAccumulator
+  isLiveItem?: boolean
 };
 
 export const createItemTimerAccumulator = (): ItemTimerAccumulator => {
@@ -114,9 +115,7 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
   const updatedItemIds: number[] = [];
 
   const uniqueParsedItems = removeInvalidItems(parsedItems);
-
-  console.log(`uniqueParsedItems: ${uniqueParsedItems.length}`);
-  
+    
   const parsedItemBatchs = chunkArray(uniqueParsedItems, 100);
 
   const timerAccumulator = createItemTimerAccumulator();
@@ -182,10 +181,11 @@ export const handleParsedItem = async ({
   channel,
   channelSeasonIndex,
   transactionalEntityManager,
-  timerAccumulator
+  timerAccumulator,
+  isLiveItem
 }: HandleParsedItem) => {
   const itemService = new ItemService();
-  const itemDto = compatItemDto(parsedItem);
+  const itemDto = compatItemDto(parsedItem, { isLiveItem });
   
   timerManager.start('updateItem');
   const item = await itemService.update(channel, itemDto);

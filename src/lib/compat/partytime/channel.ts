@@ -1,6 +1,7 @@
 import { FeedObject, Phase4Medium } from "podcast-partytime";
 import { Phase4PodcastImage } from "podcast-partytime/dist/parser/phase/phase-4";
-import { createSortableTitle, DATABASE_CONSTANTS, getBooleanOrNull, getCategoryEnumValue, getMediumEnumValue } from "podverse-helpers";
+import { createSortableTitle, DATABASE_CONSTANTS, getBooleanOrNull, getCategoryEnumValue,
+  getMediumEnumValue, isValidHttpUrl } from "podverse-helpers";
 import { getChannelItunesTypeItunesTypeEnumValue } from "podverse-orm";
 import { compatChannelValue } from "@parser/lib/compat/partytime/value";
 
@@ -20,7 +21,7 @@ export const compatChannelAboutDto = (parsedFeed: FeedObject) => ({
     )?.join(', '))?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
   explicit: getBooleanOrNull(parsedFeed.explicit),
   language: parsedFeed.language?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
-  website_link_url: parsedFeed.link?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+  website_link_url: isValidHttpUrl(parsedFeed.link) && parsedFeed.link?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
   itunes_type: getChannelItunesTypeItunesTypeEnumValue(parsedFeed.itunesType || 'episodic'),
   episode_count: parsedFeed.items?.length || 0,
   last_pub_date: parsedFeed.items?.reduce((latest, item) => {
@@ -70,7 +71,7 @@ export const compatChannelFundingDtos = (parsedFeed: FeedObject) => {
 
   if (Array.isArray(parsedFeed.podcastFunding)) {
     for (const f of parsedFeed.podcastFunding) {
-      if (f.url) {
+      if (isValidHttpUrl(f.url)) {
         dtos.push({
           url: f.url?.slice(0, DATABASE_CONSTANTS.varchar_url),
           title: f.message?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
@@ -84,14 +85,14 @@ export const compatChannelFundingDtos = (parsedFeed: FeedObject) => {
 
 export const compatChannelImageDtos = (parsedFeed: FeedObject) => {
   const dtos = [];
-  if (parsedFeed.itunesImage) {
+  if (isValidHttpUrl(parsedFeed.itunesImage)) {
     dtos.push({
-      url: parsedFeed.itunesImage.slice(0, DATABASE_CONSTANTS.varchar_url),
+      url: parsedFeed?.itunesImage?.slice(0, DATABASE_CONSTANTS.varchar_url),
       image_width_size: null
     });
-  } else if (parsedFeed.image?.url) {
+  } else if (isValidHttpUrl(parsedFeed.image?.url)) {
     dtos.push({
-      url: parsedFeed.image.url.slice(0, DATABASE_CONSTANTS.varchar_url),
+      url: parsedFeed?.image?.url.slice(0, DATABASE_CONSTANTS.varchar_url),
       image_width_size: null
     });
   }
@@ -120,7 +121,7 @@ export const compatChannelLicenseDto = (parsedFeed: FeedObject) => {
   }
   return {
     identifier: parsedFeed.license.identifier.slice(0, DATABASE_CONSTANTS.varchar_normal),
-    url: parsedFeed.license.url?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
+    url: isValidHttpUrl(parsedFeed.license.url) && parsedFeed.license.url?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
   };
 };
 
@@ -146,8 +147,8 @@ export const compatChannelPersonDtos = (parsedFeed: FeedObject) => {
           name: p.name.slice(0, DATABASE_CONSTANTS.varchar_normal),
           role: p.role?.toLowerCase()?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
           person_group: p.group?.toLowerCase()?.slice(0, DATABASE_CONSTANTS.varchar_normal) || 'cast',
-          img: p.img?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
-          href: p.href?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
+          img: isValidHttpUrl(p.img) && p.img?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+          href: isValidHttpUrl(p.href) && p.href?.slice(0, DATABASE_CONSTANTS.varchar_url) || null
         });
       }
     }
@@ -163,7 +164,7 @@ export const compatChannelPodrollRemoteItemDtos = (parsedFeed: FeedObject) => {
       if (ri.feedGuid) {
         dtos.push({
           feed_guid: ri.feedGuid.slice(0, DATABASE_CONSTANTS.varchar_guid),
-          feed_url: ri.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+          feed_url: isValidHttpUrl(ri.feedUrl) && ri.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
           item_guid: null,
           title: /* PTDO: ri.title || */ null
         });
@@ -180,7 +181,7 @@ export const compatChannelPublisherRemoteItemDtos = (parsedFeed: FeedObject) => 
   if (publisherRemoteItem?.feedGuid) {
     dtos.push({
       feed_guid: publisherRemoteItem.feedGuid.slice(0, DATABASE_CONSTANTS.varchar_guid),
-      feed_url: publisherRemoteItem.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+      feed_url: isValidHttpUrl(publisherRemoteItem.feedUrl) && publisherRemoteItem.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
       item_guid: null,
       title: /* PTDO: ri.title || */ null
     });
@@ -197,7 +198,7 @@ export const compatChannelRemoteItemDtos = (parsedFeed: FeedObject) => {
       if (ri.feedGuid) {
         dtos.push({
           feed_guid: ri.feedGuid.slice(0, DATABASE_CONSTANTS.varchar_guid),
-          feed_url: ri.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+          feed_url: isValidHttpUrl(ri.feedUrl) && ri.feedUrl?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
           item_guid: null,
           title: /* PTDO: ri.title || */ null
         });
@@ -218,7 +219,7 @@ export const compatChannelSocialInteractDtos = (parsedFeed: FeedObject) => {
         protocol: ps.platform.slice(0, DATABASE_CONSTANTS.varchar_short),
         uri: ps.url.slice(0, DATABASE_CONSTANTS.varchar_uri),
         account_id: ps.id?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
-        account_url: ps.name?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
+        account_url: isValidHttpUrl(ps.url) && ps.url?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
         priority: ps.priority || null
       });
     }
@@ -259,14 +260,16 @@ export const compatChannelTrailerDtos = (parsedFeed: FeedObject) => {
   const dtos = [];
   if (parsedFeed?.trailers?.length) {
     for (const pt of parsedFeed.trailers) {
-      dtos.push({
-        url: pt.url.slice(0, DATABASE_CONSTANTS.varchar_url),
-        title: /* PTDO: add pt.title || */ null,
-        pubdate: pt.pubdate,
-        length: pt.length || null,
-        type: pt.type?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
-        season: pt.season || null
-      });
+      if (isValidHttpUrl(pt.url)) {
+        dtos.push({
+          url: pt.url.slice(0, DATABASE_CONSTANTS.varchar_url),
+          title: /* PTDO: add pt.title || */ null,
+          pubdate: pt.pubdate,
+          length: pt.length || null,
+          type: pt.type?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
+          season: pt.season || null
+        });
+      }
     }
   }
 

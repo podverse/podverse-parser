@@ -1,5 +1,6 @@
-import { logger } from "podverse-helpers";
-import { Channel, ChannelPodrollRemoteItemService, ChannelPodrollService, ChannelPublisherRemoteItemService, ChannelPublisherService, ChannelRemoteItemService, ChannelService, FeedService, ItemService, ItemValueTimeSplitRemoteItemService } from "podverse-orm";
+import { logger, sleep } from "podverse-helpers";
+import { Channel, ChannelPodrollRemoteItemService, ChannelPodrollService, ChannelPublisherRemoteItemService, ChannelPublisherService,
+  ChannelRemoteItemService, ChannelService, FeedService, ItemService } from "podverse-orm";
 import { podcastIndexService } from '@parser/factories/podcastIndex';
 import { parseRSSFeedAndSaveToDatabase } from '@parser/lib/rss/parser';
 
@@ -8,23 +9,43 @@ type PIFeedWithPodcastGuidData = {
   url: string;
 }
 
+async function handleRequestDelay(url: string) {
+  const delayConfig = [
+    { regex: /^https?:\/\/(www\.)?wavlake\.com/, delay: 2000 },
+  ];
+
+  for (const { regex, delay } of delayConfig) {
+    if (regex.test(url)) {
+      await sleep(delay);
+      break;
+    }
+  }
+}
+
 const handleRemoteItemsFeedParsing = async (feedGuidsToParse: string[]) => {
   const piFeedDatas: PIFeedWithPodcastGuidData[] = [];
   for (const feedGuid of feedGuidsToParse) {
-    const piFeedDataResponse = await podcastIndexService.getPodcastByGuid(feedGuid);
-    if (piFeedDataResponse?.feed?.id && piFeedDataResponse?.feed?.url) {
-      const piFeedData: PIFeedWithPodcastGuidData = {
-        id: piFeedDataResponse.feed.id,
-        url: piFeedDataResponse.feed.url
-      };
-      piFeedDatas.push(piFeedData);
+    const feedService = new FeedService();
+    const pvExistingFeed = await feedService.getByPodcastGuid(feedGuid);
+
+    if (!pvExistingFeed) {
+      const piFeedDataResponse = await podcastIndexService.getPodcastByGuid(feedGuid);
+      if (piFeedDataResponse?.feed?.id && piFeedDataResponse?.feed?.url) {
+        const piFeedData: PIFeedWithPodcastGuidData = {
+          id: piFeedDataResponse.feed.id,
+          url: piFeedDataResponse.feed.url
+        };
+        piFeedDatas.push(piFeedData);
+      }
     }
   }
 
   for (const piFeedData of piFeedDatas) {
     const feedService = new FeedService();
     let feed = await feedService.getByUrlAndPodcastIndexId({ url: piFeedData.url, podcast_index_id: piFeedData.id });
+    
     if (!feed) {
+      await handleRequestDelay(piFeedData.url);
       logger.info(`handleRemoteItemsFeedParsing: ${piFeedData.url} ${piFeedData.id}`);
       await parseRSSFeedAndSaveToDatabase(piFeedData.url, piFeedData.id);
     }
