@@ -2,7 +2,7 @@ import type { Episode } from 'podcast-partytime';
 import { Phase4PodcastImage } from 'podcast-partytime/dist/parser/phase/phase-4';
 import { DATABASE_CONSTANTS, isValidHttpUrl } from 'podverse-helpers';
 import { getItemItunesEpisodeTypeEnumValue } from 'podverse-orm';
-import { compatItemValue } from './value';
+import { compatItemValue } from '@parser/lib/compat/partytime/value';
 
 type CompatItemDtoOptions = {
   isLiveItem?: boolean;
@@ -57,6 +57,36 @@ export const compatItemDescriptionDto = (parsedItem: Episode) => {
 
 export const compatItemEnclosureDtos = (parsedItem: Episode) => {
   const dtos = [];
+
+  // Create item_enclosure_default dto separately
+  if (parsedItem.enclosure?.url) {
+    const item_enclosure = {
+      type: parsedItem.enclosure.type?.slice(0, DATABASE_CONSTANTS.varchar_short),
+      length: parsedItem.enclosure.length || null,
+      bitrate: null,
+      height: null,
+      language: null,
+      title: null,
+      rel: null,
+      codecs: null,
+      item_enclosure_default: true
+    };
+
+    const item_enclosure_integrity = null;
+      
+    const item_enclosure_sources = [{
+      uri: parsedItem.enclosure.url.slice(0, DATABASE_CONSTANTS.varchar_uri),
+      content_type: null
+    }];
+    
+    const formattedDto = {
+      item_enclosure,
+      item_enclosure_integrity,
+      item_enclosure_sources
+    };
+
+    dtos.push(formattedDto);
+  }
 
   if (parsedItem.alternativeEnclosures && parsedItem.alternativeEnclosures.length > 0) {
     for (const alternativeEnclosure of parsedItem.alternativeEnclosures) {
@@ -173,24 +203,24 @@ export const compatItemPersonDtos = (parsedItem: Episode) => {
 };
 
 export const compatItemSeasonDto = (parsedItem: Episode) => {
-  if (!parsedItem.podcastSeason?.number) {
+  if (!parsedItem.podcastSeason?.number && !parsedItem.itunesSeason) {
     return null;
   }
 
   return {
-    number: parsedItem.podcastSeason.number,
-    title: parsedItem.podcastSeason.name?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
+    number: parsedItem.podcastSeason?.number || parsedItem.itunesSeason,
+    title: parsedItem.podcastSeason?.name?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
   };
 };
 
 export const compatItemSeasonEpisodeDto = (parsedItem: Episode) => {
-  if (!parsedItem.podcastEpisode) {
+  if (!parsedItem.podcastEpisode && !parsedItem.itunesEpisode) {
     return null;
   }
 
   return {
-    display: parsedItem.podcastEpisode.display?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
-    number: parsedItem.podcastEpisode.number
+    display: parsedItem.podcastEpisode?.display?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
+    number: parsedItem.podcastEpisode?.number || parsedItem.itunesEpisode,
   };
 };
 

@@ -25,9 +25,9 @@ const removeInvalidItems = (parsedItems: Episode[]): Episode[] => {
   const seenGuids = new Set<string>();
   const validUrlPattern = /^https?:\/\//;
 
-  return parsedItems.reduce((acc, item) => {
-    const enclosureUrl = item.enclosure.url.slice(0, DATABASE_CONSTANTS.varchar_url);
-    const guid = item.guid;
+  return parsedItems.reduce((acc, parsedItem) => {
+    const enclosureUrl = parsedItem.enclosure.url.slice(0, DATABASE_CONSTANTS.varchar_url);
+    const guid = parsedItem.guid;
 
     if (!validUrlPattern.test(enclosureUrl)) {
       return acc;
@@ -36,7 +36,7 @@ const removeInvalidItems = (parsedItems: Episode[]): Episode[] => {
     if (!seenEnclosureUrls.has(enclosureUrl) && !seenGuids.has(guid)) {
       seenEnclosureUrls.add(enclosureUrl);
       seenGuids.add(guid);
-      acc.push(item);
+      acc.push(parsedItem);
     }
     return acc;
   }, [] as Episode[]);
