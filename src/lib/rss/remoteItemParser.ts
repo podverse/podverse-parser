@@ -11,7 +11,7 @@ type PIFeedWithPodcastGuidData = {
 
 async function handleRequestDelay(url: string) {
   const delayConfig = [
-    { regex: /^https?:\/\/(www\.)?wavlake\.com/, delay: 2000 },
+    { regex: /^https?:\/\/(www\.)?wavlake\.com/, delay: 5000 },
   ];
 
   for (const { regex, delay } of delayConfig) {
@@ -97,6 +97,7 @@ const handleRemoteItemsItemValueTimeSplitParsing = async (channel: Channel) => {
       relations: [
         'item_values',
         'item_values.item_value_time_splits',
+        'item_values.item_value_time_splits.item_value_time_split_recipients',
         'item_values.item_value_time_splits.item_value_time_split_remote_item'
       ]
     });
