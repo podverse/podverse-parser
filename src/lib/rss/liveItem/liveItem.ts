@@ -7,7 +7,7 @@ import { config } from "@parser/config";
 
 export const handleParsedLiveItems = async (parsedLiveItems: Phase4PodcastLiveItem[], channel: Channel, channelSeasonIndex: ChannelSeasonIndex) => {
   const itemService = new ItemService();
-  const existingLiveItems = await itemService.getAllItemsWithLiveItemByChannel(channel, { select: ['id'] });
+  const existingLiveItems = await itemService.getManyWithLiveItemByChannel(channel, { select: ['id'] });
   const existingLiveItemIds = existingLiveItems.map(live_item => live_item.id);
   const updatedLiveItemIds: number[] = [];
   const liveItemObjDtos = compatLiveItemsDtos(parsedLiveItems);

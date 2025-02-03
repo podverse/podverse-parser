@@ -1,12 +1,13 @@
 import { parseFeed } from 'podcast-partytime';
 import { logError, logger, request, timerManager } from 'podverse-helpers';
 import { ChannelService, ChannelSeasonService, FeedLogService, FeedService, checkIfFeedFlagStatusShouldParse } from 'podverse-orm';
+import { config } from '@parser/config';
 import { handleParsedChannel } from "@parser/lib/rss/channel/channel";
-import { handleParsedItems } from './item/item';
-import { handleParsedChannelSeasons } from './channel/channelSeason';
-import { handleParsedLiveItems } from './liveItem/liveItem';
-import { handleRequestRSSFeed, handleParsedFeed, handleGetRSSFeed } from './feed/feed';
-import { handleAllRemoteItemsFeedParsing } from './remoteItemParser';
+import { handleParsedChannelSeasons } from '@parser/lib/rss/channel/channelSeason';
+import { handleRequestRSSFeed, handleParsedFeed, handleGetRSSFeed } from '@parser/lib/rss/feed/feed';
+import { handleParsedItems } from '@parser/lib/rss/item/item';
+import { handleParsedLiveItems } from '@parser/lib/rss/liveItem/liveItem';
+import { handleAllRemoteItemsFeedParsing } from '@parser/lib/rss/remoteItemParser';
 
 /*
   NOTE: All RSS feeds that have a podcast_index_id will be saved to the database.
@@ -91,8 +92,10 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     }
   }
 
-  if (channel) {
-    await handleAllRemoteItemsFeedParsing(channel);
+  if (config.nodeEnv === 'production') {
+    if (channel) {
+      await handleAllRemoteItemsFeedParsing(channel);
+    }
   }
 
   return;

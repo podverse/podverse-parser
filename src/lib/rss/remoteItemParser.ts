@@ -93,7 +93,7 @@ const handleRemoteItemsChannelParsing = async (channel: Channel) => {
 const handleRemoteItemsItemValueTimeSplitParsing = async (channel: Channel) => {
   if (channel.has_value_time_splits) {
     const itemService = new ItemService();
-    const items = await itemService.getAllItemsByChannel(channel, {
+    const items = await itemService.getManyByChannel(channel, {
       relations: [
         'item_values',
         'item_values.item_value_time_splits',

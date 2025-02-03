@@ -106,9 +106,9 @@ export const createItemTimerAccumulator = (): ItemTimerAccumulator => {
 export const handleParsedItems = async (parsedItems: Episode[], channel: Channel, channelSeasonIndex: ChannelSeasonIndex) => {
   const itemService = new ItemService();
 
-  timerManager.start('getAllItemsByChannel');
-  const existingItems = await itemService.getAllItemsByChannel(channel, { select: ['id'] });
-  timerManager.end('getAllItemsByChannel');
+  timerManager.start('getManyByChannel');
+  const existingItems = await itemService.getManyByChannel(channel, { select: ['id'] });
+  timerManager.end('getManyByChannel');
 
   timerManager.start('existingItemIds');
   const existingItemIds = existingItems.map(item => item.id);
