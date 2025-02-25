@@ -38,8 +38,6 @@ export const handleParsedItemValue = async (
         if (!channel.has_value_time_splits) {
           const channelService = new ChannelService();
           await channelService.update(channel.id, {
-            title: channel.title,
-            sortable_title: channel.sortable_title,
             has_value_time_splits: true
           });
         }
