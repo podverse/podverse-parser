@@ -1,15 +1,80 @@
-import { chunkArray, logger } from "podverse-helpers";
 import { Phase4PodcastLiveItem } from "podcast-partytime/dist/parser/phase/phase-4";
-import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, ItemService, LiveItemService } from "podverse-orm";
+import { chunkArray, logger } from "podverse-helpers";
+import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, getLiveItemStatusEnumValue, ItemService, LiveItemService, LiveItemStatusEnum, LiveItem } from "podverse-orm";
 import { compatLiveItemsDtos } from "@parser/lib/compat/partytime/liveItem";
 import { createItemTimerAccumulator, handleParsedItem } from "../item/item";
 import { config } from "@parser/config";
+import { EntityManager } from "typeorm";
 
-export const handleParsedLiveItems = async (parsedLiveItems: Phase4PodcastLiveItem[], channel: Channel, channelSeasonIndex: ChannelSeasonIndex) => {
+export type HandleParsedLiveItemsResult = {
+  newItemGuids: string[];
+};
+
+type LiveItemObjDto = {
+  item: Phase4PodcastLiveItem;
+  // TODO: how to replace this any?
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  liveItem: any; // Replace with the correct type if available
+};
+
+const processLiveItemBatch = async (
+  liveItemObjDtosBatch: LiveItemObjDto[],
+  channel: Channel,
+  channelSeasonIndex: ChannelSeasonIndex,
+  existingLiveItemMap: Map<string, LiveItem>,
+  updatedLiveItemIds: number[],
+  newItemGuids: string[],
+  transactionalEntityManager: EntityManager,
+  timerAccumulator: Record<string, number>,
+  liveItemService: LiveItemService
+) => {
+  for (const liveItemObjDto of liveItemObjDtosBatch) {
+    const itemDto = liveItemObjDto.item;
+
+    const item = await handleParsedItem({
+      parsedItem: itemDto,
+      channel,
+      channelSeasonIndex,
+      transactionalEntityManager,
+      timerAccumulator
+    });
+    updatedLiveItemIds.push(item.id);
+
+    const existingLiveItem = existingLiveItemMap.get(itemDto.guid);
+    const itemStatusEnum = getLiveItemStatusEnumValue(itemDto.status);
+
+    if (
+      !existingLiveItem ||
+      (existingLiveItem.live_item_status.id !== LiveItemStatusEnum.Ended && itemStatusEnum === LiveItemStatusEnum.Ended)
+    ) {
+      newItemGuids.push(itemDto.guid);
+    }
+
+    const liveItemDto = liveItemObjDto.liveItem;
+    await liveItemService.update(item, liveItemDto);
+  }
+};
+
+const logTimerAccumulator = (timerAccumulator: Record<string, number>) => {
+  if (config.shouldLogTimer) {
+    Object.entries(timerAccumulator).forEach(([key, value]) => {
+      logger.info(`${key} took ${value}ms`);
+    });
+  }
+};
+
+export const handleParsedLiveItems = async (
+  parsedLiveItems: Phase4PodcastLiveItem[],
+  channel: Channel,
+  channelSeasonIndex: ChannelSeasonIndex
+): Promise<HandleParsedLiveItemsResult> => {
   const itemService = new ItemService();
-  const existingLiveItems = await itemService.getManyWithLiveItemByChannel(channel, { select: ['id'] });
+  const liveItemService = new LiveItemService();
+  const existingLiveItems = await liveItemService.getManyByChannel(channel, { relations: ['item', 'live_item_status'] });
+  const existingLiveItemMap: Map<string, LiveItem> = new Map(existingLiveItems.map(live_item => [live_item.item.guid, live_item]));
   const existingLiveItemIds = existingLiveItems.map(live_item => live_item.id);
   const updatedLiveItemIds: number[] = [];
+  const newItemGuids: string[] = [];
   const liveItemObjDtos = compatLiveItemsDtos(parsedLiveItems);
 
   const timerAccumulator = createItemTimerAccumulator();
@@ -17,33 +82,24 @@ export const handleParsedLiveItems = async (parsedLiveItems: Phase4PodcastLiveIt
   const liveItemObjDtosBatchs = chunkArray(liveItemObjDtos, 50);
   for (const liveItemObjDtosBatch of liveItemObjDtosBatchs) {
     await AppDataSourceReadWrite.manager.transaction(async transactionalEntityManager => {
-      for (const liveItemObjDto of liveItemObjDtosBatch) {
-        // PTDO: how to make any unnecessary?
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const itemDto = liveItemObjDto.item as any;
-    
-        const item = await handleParsedItem({
-          parsedItem: itemDto,
-          channel,
-          channelSeasonIndex,
-          transactionalEntityManager,
-          timerAccumulator
-        });
-        updatedLiveItemIds.push(item.id);
-    
-        const liveItemService = new LiveItemService();
-        const liveItemDto = liveItemObjDto.liveItem;
-        await liveItemService.update(item, liveItemDto);
-      }
+      await processLiveItemBatch(
+        liveItemObjDtosBatch,
+        channel,
+        channelSeasonIndex,
+        existingLiveItemMap,
+        updatedLiveItemIds,
+        newItemGuids,
+        transactionalEntityManager,
+        timerAccumulator,
+        liveItemService
+      );
     });
   }
 
-  if (config.shouldLogTimer) {
-    Object.entries(timerAccumulator).forEach(([key, value]) => {
-      logger.info(`${key} took ${value}ms`);
-    });
-  }
+  logTimerAccumulator(timerAccumulator);
 
   const itemIdsToDelete = existingLiveItemIds.filter(id => !updatedLiveItemIds.includes(id));
   await itemService.deleteMany(itemIdsToDelete);
+
+  return { newItemGuids };
 };

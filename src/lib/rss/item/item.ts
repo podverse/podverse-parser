@@ -1,5 +1,5 @@
 import { Episode } from "podcast-partytime";
-import { chunkArray, DATABASE_CONSTANTS, logger, timerManager } from "podverse-helpers";
+import { chunkArray, DATABASE_CONSTANTS, formatGuidEnclosureUrl, logger, timerManager } from "podverse-helpers";
 import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, EntityManager, ItemService } from "podverse-orm";
 import { compatItemDto } from "@parser/lib/compat/partytime/item";
 import { handleParsedItemAbout } from "@parser/lib/rss/item/itemAbout";
@@ -103,16 +103,25 @@ export const createItemTimerAccumulator = (): ItemTimerAccumulator => {
   return timerAccumulator;
 };
 
-export const handleParsedItems = async (parsedItems: Episode[], channel: Channel, channelSeasonIndex: ChannelSeasonIndex) => {
+export type HandleParsedItemsResult = {
+  newItemGuids: string[]
+  newItemGuidEnclosureUrls: string[]
+}
+
+export const handleParsedItems = async (parsedItems: Episode[], channel: Channel, channelSeasonIndex: ChannelSeasonIndex): Promise<HandleParsedItemsResult> => {
   const itemService = new ItemService();
 
   timerManager.start('getManyByChannel');
-  const existingItems = await itemService.getManyByChannel(channel, { select: ['id'] });
+  const existingItems = await itemService.getManyByChannel(channel, { select: ['id', 'guid', 'guid_enclosure_url'] });
   timerManager.end('getManyByChannel');
 
   timerManager.start('existingItemIds');
   const existingItemIds = existingItems.map(item => item.id);
+  const existingItemGuids = new Set(existingItems.map(item => item.guid));
+  const existingItemGuidEnclosureUrls = new Set(existingItems.map(item => item.guid_enclosure_url));
   const updatedItemIds: number[] = [];
+  const newItemGuids: string[] = [];
+  const newItemGuidEnclosureUrls: string[] = [];
 
   const uniqueParsedItems = removeInvalidItems(parsedItems);
     
@@ -129,7 +138,11 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
         channel,
         channelSeasonIndex,
         updatedItemIds,
-        timerAccumulator
+        timerAccumulator,
+        newItemGuids,
+        newItemGuidEnclosureUrls,
+        existingItemGuids,
+        existingItemGuidEnclosureUrls
       });
     } else {
       await AppDataSourceReadWrite.manager.transaction(async transactionalEntityManager => {
@@ -139,7 +152,11 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
           channelSeasonIndex,
           transactionalEntityManager,
           updatedItemIds,
-          timerAccumulator
+          timerAccumulator,
+          newItemGuids,
+          newItemGuidEnclosureUrls,
+          existingItemGuids,
+          existingItemGuidEnclosureUrls
         });
       });
     }
@@ -154,6 +171,11 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
 
   const itemIdsToDelete = existingItemIds.filter(id => !updatedItemIds.includes(id));
   await itemService.deleteMany(itemIdsToDelete);
+  
+  return {
+    newItemGuids,
+    newItemGuidEnclosureUrls
+  };
 };
 
 const handleParsedItemBatch = async ({
@@ -162,8 +184,17 @@ const handleParsedItemBatch = async ({
   channelSeasonIndex,
   transactionalEntityManager,
   updatedItemIds,
-  timerAccumulator
-}: HandleParsedItemBatch) => {
+  timerAccumulator,
+  newItemGuids,
+  newItemGuidEnclosureUrls,
+  existingItemGuids,
+  existingItemGuidEnclosureUrls
+}: HandleParsedItemBatch & {
+  newItemGuids: string[],
+  newItemGuidEnclosureUrls: string[],
+  existingItemGuids: Set<string>,
+  existingItemGuidEnclosureUrls: Set<string>
+}) => {
   for (const parsedItem of parsedItemBatch) {
     const item = await handleParsedItem({
       parsedItem,
@@ -173,6 +204,15 @@ const handleParsedItemBatch = async ({
       timerAccumulator
     });
     updatedItemIds.push(item.id);
+
+    const guid = parsedItem.guid;
+    const guidEnclosureUrl = formatGuidEnclosureUrl(parsedItem.enclosure.url);
+
+    if (guid && !existingItemGuids.has(guid)) {
+      newItemGuids.push(guid);
+    } else if (guidEnclosureUrl && !existingItemGuidEnclosureUrls.has(guidEnclosureUrl)) {
+      newItemGuidEnclosureUrls.push(guidEnclosureUrl);
+    }
   }
 };
 

@@ -1,6 +1,6 @@
 import type { Episode } from 'podcast-partytime';
 import { Phase4PodcastImage } from 'podcast-partytime/dist/parser/phase/phase-4';
-import { DATABASE_CONSTANTS, isValidHttpUrl } from 'podverse-helpers';
+import { DATABASE_CONSTANTS, formatGuidEnclosureUrl, isValidHttpUrl } from 'podverse-helpers';
 import { getItemItunesEpisodeTypeEnumValue } from 'podverse-orm';
 import { compatItemValue } from '@parser/lib/compat/partytime/value';
 
@@ -12,7 +12,7 @@ export const compatItemDto = (parsedItem: Episode, options?: CompatItemDtoOption
   guid: parsedItem.guid?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
   guid_enclosure_url: !options?.isLiveItem
     && isValidHttpUrl(parsedItem.enclosure.url)
-    && parsedItem.enclosure.url.slice(0, DATABASE_CONSTANTS.varchar_url)
+    && formatGuidEnclosureUrl(parsedItem.enclosure.url)
     || null,
   pubdate: parsedItem.pubDate || null,
   title: parsedItem.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null

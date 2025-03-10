@@ -5,8 +5,8 @@ import { config } from '@parser/config';
 import { handleParsedChannel } from "@parser/lib/rss/channel/channel";
 import { handleParsedChannelSeasons } from '@parser/lib/rss/channel/channelSeason';
 import { handleRequestRSSFeed, handleParsedFeed, handleGetRSSFeed } from '@parser/lib/rss/feed/feed';
-import { handleParsedItems } from '@parser/lib/rss/item/item';
-import { handleParsedLiveItems } from '@parser/lib/rss/liveItem/liveItem';
+import { handleParsedItems, HandleParsedItemsResult } from '@parser/lib/rss/item/item';
+import { handleParsedLiveItems, HandleParsedLiveItemsResult } from '@parser/lib/rss/liveItem/liveItem';
 import { handleAllRemoteItemsFeedParsing } from '@parser/lib/rss/remoteItemParser';
 
 /*
@@ -69,12 +69,19 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     await handleParsedChannel(parsedFeed, channel, channelSeasonIndex);
     
     logger.info(`item count: ${parsedFeed.items.length}`);
+    
     // PTDO: if publisher feed, handle publisher remote item data
     // else handle parsed items
-    await handleParsedItems(parsedFeed.items, channel, channelSeasonIndex);
+
+    const newItemIdentifiers: HandleParsedItemsResult = await handleParsedItems(parsedFeed.items, channel, channelSeasonIndex);
   
+    console.log('newItemIdentifiers', newItemIdentifiers);
+    
+    let newLiveItemIdentifiers: HandleParsedLiveItemsResult = { newItemGuids: [] };
+
     if (parsedFeed.podcastLiveItems) {
-      await handleParsedLiveItems(parsedFeed.podcastLiveItems, channel, channelSeasonIndex);
+      newLiveItemIdentifiers = await handleParsedLiveItems(parsedFeed.podcastLiveItems, channel, channelSeasonIndex);
+      console.log('newLiveItemIdentifiers', newLiveItemIdentifiers);
     }
     
     // // TODO: handle new item notifications
