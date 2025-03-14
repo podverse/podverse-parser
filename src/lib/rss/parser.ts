@@ -1,7 +1,10 @@
 import { parseFeed } from 'podcast-partytime';
+import { firebaseGenerateAccessToken, NotificationsService } from 'podverse-external-services';
 import { logError, logger, request, timerManager } from 'podverse-helpers';
-import { ChannelService, ChannelSeasonService, FeedLogService, FeedService, checkIfFeedFlagStatusShouldParse } from 'podverse-orm';
+import { ChannelService, ChannelSeasonService, FeedLogService, FeedService, checkIfFeedFlagStatusShouldParse,
+  AccountFCMDeviceService, ItemService } from 'podverse-orm';
 import { config } from '@parser/config';
+import { handleNewItemsNotifications, handleNewLiveItemsNotifications } from '@parser/lib/notifications';
 import { handleParsedChannel } from "@parser/lib/rss/channel/channel";
 import { handleParsedChannelSeasons } from '@parser/lib/rss/channel/channelSeason';
 import { handleRequestRSSFeed, handleParsedFeed, handleGetRSSFeed } from '@parser/lib/rss/feed/feed';
@@ -40,11 +43,11 @@ export const getAndParseRSSFeed = async (url: string) => {
 //   return compatData;
 // };
 
-export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_id: number) => {  
+export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_id: number) => {
   const feedService = new FeedService();
   let feed = null;
   let channel = null;
-  
+
   try {
     logger.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
     feed = await handleGetRSSFeed(url, podcast_index_id);
@@ -52,42 +55,44 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     if (!checkIfFeedFlagStatusShouldParse(feed.feed_flag_status.id)) {
       throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not None or AlwaysAllow for ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
     }
-    
+
     const parsedFeed = await handleRequestRSSFeed(feed);
     feed = await handleParsedFeed(parsedFeed, feed);
     await feedService.update(feed.id, { is_parsing: new Date() });
-    
+
     const channelService = new ChannelService();
     channel = await channelService.getOrCreateByPodcastIndexId({ feed, podcast_index_id });
     
-    // ChannelSeason must be parsed before anything else, because the channel season rows
-    // need to be created for other data to have a foreign key to them.
     await handleParsedChannelSeasons(parsedFeed, channel);
     const channelSeasonService = new ChannelSeasonService();
     const channelSeasonIndex = await channelSeasonService.getChannelSeasonIndex(channel);
-    
+
     await handleParsedChannel(parsedFeed, channel, channelSeasonIndex);
-    
+
     logger.info(`item count: ${parsedFeed.items.length}`);
-    
-    // PTDO: if publisher feed, handle publisher remote item data
-    // else handle parsed items
 
     const newItemIdentifiers: HandleParsedItemsResult = await handleParsedItems(parsedFeed.items, channel, channelSeasonIndex);
-  
-    console.log('newItemIdentifiers', newItemIdentifiers);
-    
     let newLiveItemIdentifiers: HandleParsedLiveItemsResult = { newItemGuids: [] };
 
     if (parsedFeed.podcastLiveItems) {
       newLiveItemIdentifiers = await handleParsedLiveItems(parsedFeed.podcastLiveItems, channel, channelSeasonIndex);
-      console.log('newLiveItemIdentifiers', newLiveItemIdentifiers);
     }
-    
-    // // TODO: handle new item notifications
-    
-    // // TODO: handle new live_item notifications
-    
+
+    if (newItemIdentifiers.newItemGuids.length > 0 || newLiveItemIdentifiers.newItemGuids.length > 0) {
+      const googleAuthToken = await firebaseGenerateAccessToken();
+      const notificationsService = new NotificationsService({ googleAuthToken });
+      const accountFCMDeviceService = new AccountFCMDeviceService();
+      const itemService = new ItemService();
+      
+      if (newItemIdentifiers.newItemGuids.length > 0) {
+        await handleNewItemsNotifications(newItemIdentifiers, channel, notificationsService, accountFCMDeviceService, itemService);
+      }
+
+      if (newLiveItemIdentifiers.newItemGuids.length > 0) {
+        await handleNewLiveItemsNotifications(newLiveItemIdentifiers, channel, notificationsService, accountFCMDeviceService, itemService);
+      }
+    }
+
     const feedLogService = new FeedLogService();
     await feedLogService.update(feed, { last_finished_parse_time: new Date() });
   } catch (error) {

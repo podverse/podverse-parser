@@ -1,10 +1,9 @@
 import { Phase4PodcastLiveItem } from "podcast-partytime/dist/parser/phase/phase-4";
 import { chunkArray, logger } from "podverse-helpers";
 import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, getLiveItemStatusEnumValue, ItemService, LiveItemService, LiveItemStatusEnum, LiveItem } from "podverse-orm";
-import { compatLiveItemsDtos } from "@parser/lib/compat/partytime/liveItem";
-import { createItemTimerAccumulator, handleParsedItem } from "../item/item";
 import { config } from "@parser/config";
-import { EntityManager } from "typeorm";
+import { compatLiveItemsDtos } from "@parser/lib/compat/partytime/liveItem";
+import { createItemTimerAccumulator, handleParsedItem } from "@parser/lib/rss/item/item";
 
 export type HandleParsedLiveItemsResult = {
   newItemGuids: string[];
@@ -24,20 +23,22 @@ const processLiveItemBatch = async (
   existingLiveItemMap: Map<string, LiveItem>,
   updatedLiveItemIds: number[],
   newItemGuids: string[],
-  transactionalEntityManager: EntityManager,
-  timerAccumulator: Record<string, number>,
+  transactionalEntityManager: any, 
+  timerAccumulator: any,
   liveItemService: LiveItemService
 ) => {
   for (const liveItemObjDto of liveItemObjDtosBatch) {
     const itemDto = liveItemObjDto.item;
-
+    
     const item = await handleParsedItem({
       parsedItem: itemDto,
       channel,
       channelSeasonIndex,
       transactionalEntityManager,
-      timerAccumulator
+      timerAccumulator,
+      isLiveItem: true
     });
+
     updatedLiveItemIds.push(item.id);
 
     const existingLiveItem = existingLiveItemMap.get(itemDto.guid);

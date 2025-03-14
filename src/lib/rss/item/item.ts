@@ -1,6 +1,6 @@
 import { Episode } from "podcast-partytime";
 import { chunkArray, DATABASE_CONSTANTS, formatGuidEnclosureUrl, logger, timerManager } from "podverse-helpers";
-import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, EntityManager, ItemService } from "podverse-orm";
+import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, ItemService } from "podverse-orm";
 import { compatItemDto } from "@parser/lib/compat/partytime/item";
 import { handleParsedItemAbout } from "@parser/lib/rss/item/itemAbout";
 import { handleParsedItemChaptersFeed } from "@parser/lib/rss/item/itemChaptersFeed";
@@ -66,16 +66,16 @@ type HandleParsedItemBatch = {
   parsedItemBatch: Episode[]
   channel: Channel
   channelSeasonIndex: ChannelSeasonIndex
-  transactionalEntityManager?: EntityManager
+  transactionalEntityManager?: any
   updatedItemIds: number[]
   timerAccumulator: ItemTimerAccumulator
 };
 
 type HandleParsedItem = {
-  parsedItem: Episode
+  parsedItem: any
   channel: Channel
   channelSeasonIndex: ChannelSeasonIndex
-  transactionalEntityManager?: EntityManager
+  transactionalEntityManager?: any
   timerAccumulator: ItemTimerAccumulator
   isLiveItem?: boolean
 };
