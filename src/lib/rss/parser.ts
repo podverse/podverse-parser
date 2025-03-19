@@ -48,7 +48,11 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
   let feed = null;
   let channel = null;
 
+  const timerFullRunLabel = `parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`;
+  timerManager.start(timerFullRunLabel);
+
   try {
+
     logger.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
     feed = await handleGetRSSFeed(url, podcast_index_id);
 
