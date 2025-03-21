@@ -17,7 +17,7 @@ export const handleParsedChannelTrailer = async (
     const channel_season = channelTrailerDto.season ? channelSeasonIndex[channelTrailerDto.season] : null;
     return {
       url: channelTrailerDto.url,
-      pubdate: channelTrailerDto.pubdate,
+      pub_date: channelTrailerDto.pub_date,
       title: channelTrailerDto.title,
       length: channelTrailerDto.length,
       type: channelTrailerDto.type,

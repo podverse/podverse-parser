@@ -14,7 +14,7 @@ export const compatItemDto = (parsedItem: Episode, options?: CompatItemDtoOption
     && isValidHttpUrl(parsedItem.enclosure.url)
     && formatGuidEnclosureUrl(parsedItem.enclosure.url)
     || null,
-  pubdate: parsedItem.pubDate || null,
+  pub_date: parsedItem.pubDate || null,
   title: parsedItem.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null
 });
 

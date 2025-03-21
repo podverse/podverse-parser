@@ -264,7 +264,7 @@ export const compatChannelTrailerDtos = (parsedFeed: FeedObject) => {
         dtos.push({
           url: pt.url.slice(0, DATABASE_CONSTANTS.varchar_url),
           title: /* PTDO: add pt.title || */ null,
-          pubdate: pt.pubdate,
+          pub_date: pt.pubdate,
           length: pt.length || null,
           type: pt.type?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
           season: pt.season || null
