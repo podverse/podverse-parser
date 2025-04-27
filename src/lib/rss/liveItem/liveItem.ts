@@ -4,6 +4,7 @@ import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, getLiveItemStatusE
 import { config } from "@parser/config";
 import { compatLiveItemsDtos } from "@parser/lib/compat/partytime/liveItem";
 import { createItemTimerAccumulator, handleParsedItem } from "@parser/lib/rss/item/item";
+import { ItemFlagStatusStatusEnum } from "podverse-orm/dist/entities/item/itemFlagStatus";
 
 export type HandleParsedLiveItemsResult = {
   newItemGuids: string[];
@@ -100,7 +101,8 @@ export const handleParsedLiveItems = async (
   logTimerAccumulator(timerAccumulator);
 
   const itemIdsToDelete = existingLiveItemIds.filter(id => !updatedLiveItemIds.includes(id));
-  await itemService.deleteMany(itemIdsToDelete);
+  const itemsToDelete = existingLiveItems.filter(item => itemIdsToDelete.includes(item.id));
+  await itemService.updateManyFlagStatus(itemsToDelete, ItemFlagStatusStatusEnum.PendingArchive);
 
   return { newItemGuids };
 };

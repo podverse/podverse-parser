@@ -19,6 +19,7 @@ import { handleParsedItemTxt } from "@parser/lib/rss/item/itemTxt";
 import { handleParsedItemValue } from "@parser/lib/rss/item/itemValue";
 import { handleParsedItemChat } from "@parser/lib/rss/item/itemChat";
 import { config } from "@parser/config";
+import { ItemFlagStatusStatusEnum } from "podverse-orm/dist/entities/item/itemFlagStatus";
 
 const removeInvalidItems = (parsedItems: Episode[]): Episode[] => {
   const seenEnclosureUrls = new Set<string>();
@@ -116,7 +117,7 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
   timerManager.end('getManyByChannel');
 
   timerManager.start('existingItemIds');
-  const existingItemIds = existingItems.map(item => item.id);
+  const existingItemIds: number[] = existingItems.map(item => item.id);
   const existingItemGuids = new Set(existingItems.map(item => item.guid));
   const existingItemGuidEnclosureUrls = new Set(existingItems.map(item => item.guid_enclosure_url));
   const updatedItemIds: number[] = [];
@@ -168,9 +169,10 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
       logger.info(`${key} took ${value}ms`);
     });
   }
-
+  
   const itemIdsToDelete = existingItemIds.filter(id => !updatedItemIds.includes(id));
-  await itemService.deleteMany(itemIdsToDelete);
+  const itemsToDelete = existingItems.filter(item => itemIdsToDelete.includes(item.id));
+  await itemService.updateManyFlagStatus(itemsToDelete, ItemFlagStatusStatusEnum.PendingArchive);
   
   return {
     newItemGuids,
@@ -228,7 +230,7 @@ export const handleParsedItem = async ({
   const itemDto = compatItemDto(parsedItem, { isLiveItem });
   
   timerManager.start('updateItem');
-  const item = await itemService.update(channel, itemDto);
+  const item = await itemService.update(channel, ItemFlagStatusStatusEnum.Active, itemDto);
   timerAccumulator.updateItem = timerManager.end('updateItem', true) + timerAccumulator.updateItem;
 
   const preventTimerLog = true;
