@@ -101,7 +101,9 @@ export const handleParsedLiveItems = async (
   logTimerAccumulator(timerAccumulator);
 
   const itemIdsToDelete = existingLiveItemIds.filter(id => !updatedLiveItemIds.includes(id));
-  const itemsToDelete = existingLiveItems.filter(item => itemIdsToDelete.includes(item.id));
+  const itemsToDelete = existingLiveItems
+    .filter(liveItem => itemIdsToDelete.includes(liveItem.id))
+    .map(liveItem => liveItem.item);
   await itemService.updateManyFlagStatus(itemsToDelete, ItemFlagStatusStatusEnum.PendingArchive);
 
   return { newItemGuids };

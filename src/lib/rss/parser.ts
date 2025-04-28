@@ -2,7 +2,7 @@ import { parseFeed } from 'podcast-partytime';
 import { firebaseGenerateAccessToken, NotificationsService } from 'podverse-external-services';
 import { logError, logger, request, timerManager } from 'podverse-helpers';
 import { ChannelService, ChannelSeasonService, FeedLogService, FeedService, checkIfFeedFlagStatusShouldParse,
-  AccountFCMDeviceService, ItemService } from 'podverse-orm';
+  AccountFCMDeviceService, ItemService, checkIfSpamFeed, FeedFlagStatusStatusEnum } from 'podverse-orm';
 import { config } from '@parser/config';
 import { handleNewItemsNotifications, handleNewLiveItemsNotifications } from '@parser/lib/notifications';
 import { handleParsedChannel } from "@parser/lib/rss/channel/channel";
@@ -16,15 +16,6 @@ import { handleAllRemoteItemsFeedParsing } from '@parser/lib/rss/remoteItemParse
   NOTE: All RSS feeds that have a podcast_index_id will be saved to the database.
   RSS feeds without podcast_index_id (Add By RSS feeds) will NOT be saved to the database.
 */
-
-// TEMP: exists for development purposes
-export const parseAllRSSFeeds = async () => {
-  const feedService = new FeedService();
-  const feeds = await feedService.getAll();
-  for (const feed of feeds) {
-    return await parseRSSFeedAndSaveToDatabase(feed.url, feed?.channel?.podcast_index_id);
-  }
-};
 
 export const getAndParseRSSFeed = async (url: string) => {
   const xml: string = await request(url);
@@ -57,12 +48,17 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     feed = await handleGetRSSFeed(url, podcast_index_id);
 
     if (!checkIfFeedFlagStatusShouldParse(feed.feed_flag_status.id)) {
-      throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not None or AlwaysAllow for ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
+      throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not Active or AlwaysAllow for ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
     }
 
     const parsedFeed = await handleRequestRSSFeed(feed);
     feed = await handleParsedFeed(parsedFeed, feed);
     await feedService.update(feed.id, { is_parsing: new Date() });
+    
+    if (checkIfSpamFeed(parsedFeed)) {
+      await feedService.updateFlagStatus(feed, FeedFlagStatusStatusEnum.Spam);
+      throw new Error(`parseRSSFeedAndSaveToDatabase: feed is spam ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
+    }
 
     const channelService = new ChannelService();
     channel = await channelService.getOrCreateByPodcastIndexId({ feed, podcast_index_id });
