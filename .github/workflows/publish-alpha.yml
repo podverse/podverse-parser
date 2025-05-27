@@ -1,0 +1,81 @@
+name: Publish Alpha podverse-parser
+
+on:
+  push:
+    branches:
+      - v5-alpha
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.16.0'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install podverse-helpers latest alpha version
+        run: |
+          npm i podverse-helpers@alpha --save
+
+      - name: Install podverse-external-services latest alpha version
+        run: |
+          npm i podverse-external-services@alpha --save
+
+      - name: Install podverse-orm latest alpha version
+        run: |
+          npm i podverse-orm@alpha --save
+      
+      - name: Clean install dependencies
+        run: npm clean-install
+      
+      - name: Increment alpha version
+        id: version
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          BASE_VERSION=$(node -p "require('./package.json').version")
+          # Strip any pre-release tag (e.g., '-develop') from BASE_VERSION
+          BASE_VERSION=$(echo "$BASE_VERSION" | sed 's/-.*//')
+
+          # Try to get the current alpha version (e.g., 5.1.1-alpha.3)
+          ALPHA_VERSION=$(npm dist-tag ls "$PACKAGE_NAME" 2>/dev/null | grep -w alpha | awk '{print $2}')
+
+          # If no alpha tag exists
+          if [[ -z "$ALPHA_VERSION" ]]; then
+            echo "No alpha version found. Starting with: $BASE_VERSION-alpha.0"
+            NEXT_VERSION="$BASE_VERSION-alpha.0"
+          else
+            # Extract the base and numeric suffix from the current alpha version
+            CURRENT_BASE=$(echo "$ALPHA_VERSION" | cut -d '-' -f 1)
+            CURRENT_ALPHA_NUM=$(echo "$ALPHA_VERSION" | sed -En 's/.*alpha\.([0-9]+)$/\1/p')
+
+            # If current alpha is malformed or suffix missing
+            if [[ -z "$CURRENT_ALPHA_NUM" ]]; then
+              NEXT_VERSION="$BASE_VERSION-alpha.0"
+            fi
+
+            if [[ "$CURRENT_BASE" == "$BASE_VERSION" ]]; then
+              NEXT_INDEX=$((CURRENT_ALPHA_NUM + 1))
+              NEXT_VERSION="$BASE_VERSION-alpha.$NEXT_INDEX"
+              echo "Same base version detected. Incrementing alpha to: $NEXT_VERSION"
+            else
+              NEXT_VERSION="$BASE_VERSION-alpha.0"
+              echo "New base version detected. Resetting alpha to: $NEXT_VERSION"
+            fi
+          fi
+          
+          echo "Updating package.json"
+          npm version $NEXT_VERSION --no-git-tag-version
+      
+      - name: Build module
+        run: npm run build
+      
+      - name: Publish to npm
+        run: npm publish --tag alpha
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ALPHA_NPM_TOKEN }}
