@@ -1,8 +1,5 @@
 .env
 
-package-lock.json
-yarn.lock
-
 .git
 
 **/dist
@@ -38,5 +35,3 @@ dist/**/*
 *.log
 
 temp
-
-package-lock.json
