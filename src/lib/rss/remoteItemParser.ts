@@ -29,7 +29,7 @@ const handleRemoteItemsFeedParsing = async (feedGuidsToParse: string[]) => {
     const pvExistingFeed = await feedService.getByPodcastGuid(feedGuid);
 
     if (!pvExistingFeed) {
-      const piFeedDataResponse = await podcastIndexService.getPodcastByGuid(feedGuid);
+      const piFeedDataResponse = await podcastIndexService.podcastGetByGuid(feedGuid);
       if (piFeedDataResponse?.feed?.id && piFeedDataResponse?.feed?.url) {
         const piFeedData: PIFeedWithPodcastGuidData = {
           id: piFeedDataResponse.feed.id,
