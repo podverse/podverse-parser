@@ -4,6 +4,7 @@ import { Feed, FeedService, FeedLogService } from "podverse-orm";
 import { config } from "@parser/config";
 import { getParsedFeedMd5Hash } from "../hash/parsedFeed";
 import { getAndParseRSSFeed } from "../parser";
+import { FeedIsParsingError, FeedNoChangesSinceLastParsedError } from "../errors";
 
 export const handleGetRSSFeed = async (url: string, podcast_index_id: number): Promise<Feed> => {
   timerManager.start('handleGetRSSFeed');
@@ -79,7 +80,7 @@ export const handleParsedFeed = async (parsedFeed: FeedObject, feed: Feed): Prom
   if (config.nodeEnv === 'production') {
     checkIfFeedIsParsing(feed);
     if (feed.last_parsed_file_hash === currentFeedFileHash) {
-      throw new Error(`Feed ${feed.id} has no changes since last parsed.`);
+      throw new FeedNoChangesSinceLastParsedError(feed.id);
     }
   }
   
@@ -88,14 +89,13 @@ export const handleParsedFeed = async (parsedFeed: FeedObject, feed: Feed): Prom
 };
 
 const checkIfFeedIsParsing = (feed: Feed): void => {
-  // TODO: handle with caching db / redis instead of database?
   if (feed.is_parsing) {
     const parsingDate = new Date(feed.is_parsing);
     const currentDate = new Date();
     const timeDifference = (currentDate.getTime() - parsingDate.getTime()) / (1000 * 60);
     
     if (timeDifference <= 15) {
-      throw new Error(`Feed ${feed.id} is already parsing`);
+      throw new FeedIsParsingError(feed.id);
     }
   }
 };

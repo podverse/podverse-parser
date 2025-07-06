@@ -11,6 +11,7 @@ import { handleRequestRSSFeed, handleParsedFeed, handleGetRSSFeed } from '@parse
 import { handleParsedItems, HandleParsedItemsResult } from '@parser/lib/rss/item/item';
 import { handleParsedLiveItems, HandleParsedLiveItemsResult } from '@parser/lib/rss/liveItem/liveItem';
 import { handleAllRemoteItemsFeedParsing } from '@parser/lib/rss/remoteItemParser';
+import { FeedIsParsingError, FeedNoChangesSinceLastParsedError } from './errors';
 
 /*
   NOTE: All RSS feeds that have a podcast_index_id will be saved to the database.
@@ -97,6 +98,14 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     await feedLogService.update(feed, { last_finished_parse_time: new Date() });
   } catch (error) {
     logError('parseRSSFeedAndSaveToDatabase', error as Error);
+    if (error instanceof FeedIsParsingError) {
+      logger.warn(`Feed ${feed?.id} is already parsing.`);
+    } else if (error instanceof FeedNoChangesSinceLastParsedError) {
+      logger.warn(`Feed ${feed?.id} has no changes since last parsed.`);
+    } else {
+      // TODO: Handle other errors
+      logError('parseRSSFeedAndSaveToDatabase', error as Error);
+    }
   } finally {
     timerManager.endAll();
     if (feed) {
