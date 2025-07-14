@@ -1,8 +1,11 @@
+
 import { PodcastIndexService } from 'podverse-external-services';
-import { config } from '@parser/config';
+import { loggerService } from './loggerService';
+import { config } from '../config';
 
-const authKey = config.podcastIndex.authKey || '';
-const baseUrl = config.podcastIndex.baseUrl || '';
-const secretKey = config.podcastIndex.secretKey || '';
-
-export const podcastIndexService = new PodcastIndexService({ authKey, baseUrl, secretKey });
+export const podcastIndexService = new PodcastIndexService({
+  authKey: config.podcastIndex.authKey,
+  baseUrl: config.podcastIndex.baseUrl,
+  secretKey: config.podcastIndex.secretKey,
+  loggerService
+});

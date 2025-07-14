@@ -1,8 +1,8 @@
 import { FeedObject } from "podcast-partytime";
-import { timerManager } from "podverse-helpers";
 import { Channel, ChannelDescriptionService, EntityManager } from "podverse-orm";
 import { compatChannelDescriptionDto } from "@parser/lib/compat/partytime/channel";
 import { handleParsedOneData } from "../base/handleParsedOneData";
+import { timerManager } from "@parser/factories/timerManager";
 
 export const handleParsedChannelDescription = async (
   parsedFeed: FeedObject,

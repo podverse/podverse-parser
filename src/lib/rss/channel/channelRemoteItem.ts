@@ -1,8 +1,8 @@
 import { FeedObject } from "podcast-partytime";
-import { timerManager } from "podverse-helpers";
 import { Channel, ChannelRemoteItemService, EntityManager } from "podverse-orm";
 import { compatChannelRemoteItemDtos } from "@parser/lib/compat/partytime/channel";
 import { handleParsedManyData } from "../base/handleParsedManyData";
+import { timerManager } from "@parser/factories/timerManager";
 
 export const handleParsedChannelRemoteItem = async (
   parsedFeed: FeedObject,

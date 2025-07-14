@@ -1,5 +1,5 @@
 import { Episode } from "podcast-partytime";
-import { chunkArray, DATABASE_CONSTANTS, formatGuidEnclosureUrl, logger, timerManager } from "podverse-helpers";
+import { chunkArray, DATABASE_CONSTANTS, formatGuidEnclosureUrl } from "podverse-helpers";
 import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, ItemService } from "podverse-orm";
 import { compatItemDto } from "@parser/lib/compat/partytime/item";
 import { handleParsedItemAbout } from "@parser/lib/rss/item/itemAbout";
@@ -18,8 +18,9 @@ import { handleParsedItemTranscript } from "@parser/lib/rss/item/itemTranscript"
 import { handleParsedItemTxt } from "@parser/lib/rss/item/itemTxt";
 import { handleParsedItemValue } from "@parser/lib/rss/item/itemValue";
 import { handleParsedItemChat } from "@parser/lib/rss/item/itemChat";
-import { config } from "@parser/config";
 import { ItemFlagStatusStatusEnum } from "podverse-orm/dist/entities/item/itemFlagStatus";
+import { timerManager } from "@parser/factories/timerManager";
+import { loggerService } from "@parser/factories/loggerService";
 
 const removeInvalidItems = (parsedItems: Episode[]): Episode[] => {
   const seenEnclosureUrls = new Set<string>();
@@ -67,15 +68,18 @@ type HandleParsedItemBatch = {
   parsedItemBatch: Episode[]
   channel: Channel
   channelSeasonIndex: ChannelSeasonIndex
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transactionalEntityManager?: any
   updatedItemIds: number[]
   timerAccumulator: ItemTimerAccumulator
 };
 
 type HandleParsedItem = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parsedItem: any
   channel: Channel
   channelSeasonIndex: ChannelSeasonIndex
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transactionalEntityManager?: any
   timerAccumulator: ItemTimerAccumulator
   isLiveItem?: boolean
@@ -133,7 +137,7 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
 
   for (const parsedItemBatch of parsedItemBatchs) {
     timerManager.start('handleParsedItemBatch');
-    if (config.shouldLogTimer) {
+    if (timerManager.shouldLogTimer) {
       await handleParsedItemBatch({
         parsedItemBatch,
         channel,
@@ -164,9 +168,9 @@ export const handleParsedItems = async (parsedItems: Episode[], channel: Channel
     timerManager.end('handleParsedItemBatch');
   }
 
-  if (config.shouldLogTimer) {
+  if (timerManager.shouldLogTimer) {
     Object.entries(timerAccumulator).forEach(([key, value]) => {
-      logger.info(`${key} took ${value}ms`);
+      loggerService.info(`${key} took ${value}ms`);
     });
   }
   

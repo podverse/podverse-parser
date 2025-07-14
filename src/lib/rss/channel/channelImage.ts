@@ -1,8 +1,8 @@
 import { FeedObject } from "podcast-partytime";
-import { timerManager } from "podverse-helpers";
 import { Channel, ChannelImageService, EntityManager } from "podverse-orm";
 import { compatChannelImageDtos } from "@parser/lib/compat/partytime/channel";
 import { handleParsedManyData } from "../base/handleParsedManyData";
+import { timerManager } from "@parser/factories/timerManager";
 
 export const handleParsedChannelImage = async (
   parsedFeed: FeedObject,

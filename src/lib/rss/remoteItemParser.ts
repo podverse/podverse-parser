@@ -1,8 +1,9 @@
-import { logger, sleep } from "podverse-helpers";
+import { sleep } from "podverse-helpers";
 import { Channel, ChannelPodrollRemoteItemService, ChannelPodrollService, ChannelPublisherRemoteItemService, ChannelPublisherService,
   ChannelRemoteItemService, ChannelService, FeedService, ItemService } from "podverse-orm";
 import { podcastIndexService } from '@parser/factories/podcastIndex';
 import { parseRSSFeedAndSaveToDatabase } from '@parser/lib/rss/parser';
+import { loggerService } from "@parser/factories/loggerService";
 
 type PIFeedWithPodcastGuidData = {
   id: number;
@@ -46,7 +47,7 @@ const handleRemoteItemsFeedParsing = async (feedGuidsToParse: string[]) => {
     
     if (!feed) {
       await handleRequestDelay(piFeedData.url);
-      logger.info(`handleRemoteItemsFeedParsing: ${piFeedData.url} ${piFeedData.id}`);
+      loggerService.info(`handleRemoteItemsFeedParsing: ${piFeedData.url} ${piFeedData.id}`);
       await parseRSSFeedAndSaveToDatabase(piFeedData.url, piFeedData.id);
     }
   }

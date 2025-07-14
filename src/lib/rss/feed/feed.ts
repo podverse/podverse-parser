@@ -1,10 +1,10 @@
 import { FeedObject } from "podcast-partytime";
-import { throwRequestError, timerManager } from "podverse-helpers";
+import { throwRequestError } from "podverse-helpers";
 import { Feed, FeedService, FeedLogService } from "podverse-orm";
-import { config } from "@parser/config";
 import { getParsedFeedMd5Hash } from "../hash/parsedFeed";
 import { getAndParseRSSFeed } from "../parser";
 import { FeedIsParsingError, FeedNoChangesSinceLastParsedError } from "../errors";
+import { timerManager } from "@parser/factories/timerManager";
 
 export const handleGetRSSFeed = async (url: string, podcast_index_id: number): Promise<Feed> => {
   timerManager.start('handleGetRSSFeed');
@@ -77,11 +77,9 @@ export const handleRequestRSSFeed = async (feed: Feed): Promise<FeedObject> => {
 export const handleParsedFeed = async (parsedFeed: FeedObject, feed: Feed): Promise<Feed> => {
   const currentFeedFileHash = getParsedFeedMd5Hash(parsedFeed);
 
-  if (config.nodeEnv === 'production') {
-    checkIfFeedIsParsing(feed);
-    if (feed.last_parsed_file_hash === currentFeedFileHash) {
-      throw new FeedNoChangesSinceLastParsedError(feed.id);
-    }
+  checkIfFeedIsParsing(feed);
+  if (feed.last_parsed_file_hash === currentFeedFileHash) {
+    throw new FeedNoChangesSinceLastParsedError(feed.id);
   }
   
   const feedService = new FeedService();

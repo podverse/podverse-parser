@@ -1,9 +1,7 @@
 import { parseFeed } from 'podcast-partytime';
-import { firebaseGenerateAccessToken, NotificationsService } from 'podverse-external-services';
-import { logError, logger, request, timerManager } from 'podverse-helpers';
+import { request } from 'podverse-helpers';
 import { ChannelService, ChannelSeasonService, FeedLogService, FeedService, checkIfFeedFlagStatusShouldParse,
   AccountFCMDeviceService, ItemService, checkIfSpamFeed, FeedFlagStatusStatusEnum } from 'podverse-orm';
-import { config } from '@parser/config';
 import { handleNewItemsNotifications, handleNewLiveItemsNotifications } from '@parser/lib/notifications';
 import { handleParsedChannel } from "@parser/lib/rss/channel/channel";
 import { handleParsedChannelSeasons } from '@parser/lib/rss/channel/channelSeason';
@@ -12,6 +10,10 @@ import { handleParsedItems, HandleParsedItemsResult } from '@parser/lib/rss/item
 import { handleParsedLiveItems, HandleParsedLiveItemsResult } from '@parser/lib/rss/liveItem/liveItem';
 import { handleAllRemoteItemsFeedParsing } from '@parser/lib/rss/remoteItemParser';
 import { FeedIsParsingError, FeedNoChangesSinceLastParsedError } from './errors';
+import { timerManager } from '@parser/factories/timerManager';
+import { loggerService } from '@parser/factories/loggerService';
+import { firebaseAccessTokenService } from '@parser/factories/firebaseAccessTokenService';
+import { NotificationsServiceFactory } from '@parser/factories/notificationsService';
 
 /*
   NOTE: All RSS feeds that have a podcast_index_id will be saved to the database.
@@ -45,7 +47,7 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
 
   try {
 
-    logger.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
+    loggerService.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
     feed = await handleGetRSSFeed(url, podcast_index_id);
 
     if (!checkIfFeedFlagStatusShouldParse(feed.feed_flag_status.id)) {
@@ -70,7 +72,7 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
 
     await handleParsedChannel(parsedFeed, channel, channelSeasonIndex);
 
-    logger.info(`item count: ${parsedFeed.items.length}`);
+    loggerService.info(`item count: ${parsedFeed.items.length}`);
 
     const newItemIdentifiers: HandleParsedItemsResult = await handleParsedItems(parsedFeed.items, channel, channelSeasonIndex);
     let newLiveItemIdentifiers: HandleParsedLiveItemsResult = { newItemGuids: [] };
@@ -80,8 +82,8 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     }
 
     if (newItemIdentifiers.newItemGuids.length > 0 || newLiveItemIdentifiers.newItemGuids.length > 0) {
-      const googleAuthToken = await firebaseGenerateAccessToken();
-      const notificationsService = new NotificationsService({ googleAuthToken });
+      const googleAuthToken = await firebaseAccessTokenService.generateAccessToken();
+      const notificationsService = NotificationsServiceFactory(googleAuthToken);
       const accountFCMDeviceService = new AccountFCMDeviceService();
       const itemService = new ItemService();
       
@@ -98,12 +100,12 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     await feedLogService.update(feed, { last_finished_parse_time: new Date() });
   } catch (error) {
     if (error instanceof FeedIsParsingError) {
-      logger.warn(`Feed ${feed?.id} is already parsing.`);
+      loggerService.warn(`Feed ${feed?.id} is already parsing.`);
     } else if (error instanceof FeedNoChangesSinceLastParsedError) {
-      logger.warn(`Feed ${feed?.id} has no changes since last parsed.`);
+      loggerService.warn(`Feed ${feed?.id} has no changes since last parsed.`);
     } else {
       // TODO: Handle other errors
-      logError('parseRSSFeedAndSaveToDatabase', error as Error);
+      loggerService.logError('parseRSSFeedAndSaveToDatabase', error as Error);
     }
   } finally {
     timerManager.endAll();
@@ -112,12 +114,10 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     }
   }
 
-  if (config.nodeEnv === 'production') {
-    if (channel) {
-      await handleAllRemoteItemsFeedParsing(channel);
-    }
+  if (channel) {
+    await handleAllRemoteItemsFeedParsing(channel);
   }
-
+  
   return;
 };
 

@@ -1,10 +1,11 @@
 import { Phase4PodcastLiveItem } from "podcast-partytime/dist/parser/phase/phase-4";
-import { chunkArray, logger } from "podverse-helpers";
+import { chunkArray } from "podverse-helpers";
 import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, getLiveItemStatusEnumValue, ItemService, LiveItemService, LiveItemStatusEnum, LiveItem } from "podverse-orm";
-import { config } from "@parser/config";
 import { compatLiveItemsDtos } from "@parser/lib/compat/partytime/liveItem";
 import { createItemTimerAccumulator, handleParsedItem } from "@parser/lib/rss/item/item";
 import { ItemFlagStatusStatusEnum } from "podverse-orm/dist/entities/item/itemFlagStatus";
+import { timerManager } from "@parser/factories/timerManager";
+import { loggerService } from "@parser/factories/loggerService";
 
 export type HandleParsedLiveItemsResult = {
   newItemGuids: string[];
@@ -24,7 +25,9 @@ const processLiveItemBatch = async (
   existingLiveItemMap: Map<string, LiveItem>,
   updatedLiveItemIds: number[],
   newItemGuids: string[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transactionalEntityManager: any, 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   timerAccumulator: any,
   liveItemService: LiveItemService
 ) => {
@@ -58,9 +61,9 @@ const processLiveItemBatch = async (
 };
 
 const logTimerAccumulator = (timerAccumulator: Record<string, number>) => {
-  if (config.shouldLogTimer) {
+  if (timerManager.shouldLogTimer) {
     Object.entries(timerAccumulator).forEach(([key, value]) => {
-      logger.info(`${key} took ${value}ms`);
+      loggerService.info(`${key} took ${value}ms`);
     });
   }
 };
