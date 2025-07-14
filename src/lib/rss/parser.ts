@@ -12,7 +12,7 @@ import { handleAllRemoteItemsFeedParsing } from '@parser/lib/rss/remoteItemParse
 import { FeedIsParsingError, FeedNoChangesSinceLastParsedError } from './errors';
 import { timerManager } from '@parser/factories/timerManager';
 import { loggerService } from '@parser/factories/loggerService';
-import { firebaseAccessTokenService } from '@parser/factories/firebaseAccessTokenService';
+import { firebaseAccessTokenServiceFactory } from '@parser/factories/firebaseAccessTokenService';
 import { NotificationsServiceFactory } from '@parser/factories/notificationsService';
 
 /*
@@ -82,6 +82,7 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     }
 
     if (newItemIdentifiers.newItemGuids.length > 0 || newLiveItemIdentifiers.newItemGuids.length > 0) {
+      const firebaseAccessTokenService = firebaseAccessTokenServiceFactory();
       const googleAuthToken = await firebaseAccessTokenService.generateAccessToken();
       const notificationsService = NotificationsServiceFactory(googleAuthToken);
       const accountFCMDeviceService = new AccountFCMDeviceService();
