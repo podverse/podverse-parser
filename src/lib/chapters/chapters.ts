@@ -5,12 +5,13 @@ import { compatParsedChapters, PIChapter } from "@parser/lib/compat/chapters/cha
 const getParsedChapters = async (item_chapters_feed: ItemChaptersFeed) => {
   const itemChaptersFeedLogService = new ItemChaptersFeedLogService();
   try {
-    const response: { chapters: PIChapter[] } = await request(item_chapters_feed.url);
+    const response = await request(item_chapters_feed.url);
+    const data = response.data as PIChapter[];
     await itemChaptersFeedLogService.update(item_chapters_feed, {
       last_http_status: 200,
       last_good_http_status_time: new Date()
     });
-    return compatParsedChapters(response.chapters);
+    return compatParsedChapters(data);
   } catch (error) {
     // TODO: how to handle errors?
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

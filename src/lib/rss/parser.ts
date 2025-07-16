@@ -21,8 +21,9 @@ import { NotificationsServiceFactory } from '@parser/factories/notificationsServ
 */
 
 export const getAndParseRSSFeed = async (url: string) => {
-  const xml: string = await request(url);
-  const parsedFeed = parseFeed(xml, { allowMissingGuid: true });
+  const response = await request(url);
+  const data = response.data as string;
+  const parsedFeed = parseFeed(data, { allowMissingGuid: true });
 
   if (!parsedFeed) {
     throw new Error(`getAndParseRSSFeed: parsedFeed not found for ${url}`);
