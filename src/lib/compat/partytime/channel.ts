@@ -24,13 +24,15 @@ export const compatChannelAboutDto = (parsedFeed: FeedObject) => ({
   website_link_url: isValidHttpUrl(parsedFeed.link) && parsedFeed.link?.slice(0, DATABASE_CONSTANTS.varchar_url) || null,
   itunes_type: getChannelItunesTypeItunesTypeEnumValue(parsedFeed.itunesType || 'episodic'),
   episode_count: parsedFeed.items?.length || 0,
-  last_pub_date: parsedFeed.items?.reduce((latest, item) => {
-    if (item.pubDate) {
-      const itemDate = new Date(item.pubDate);
+  last_pub_date: (() => {
+    const itemsWithPubDate = parsedFeed.items?.filter(item => !!item.pubDate) || [];
+    if (itemsWithPubDate.length === 0) return null;
+    const latestDate = itemsWithPubDate.reduce((latest, item) => {
+      const itemDate = new Date(item.pubDate!);
       return itemDate > latest ? itemDate : latest;
-    }
-    return latest;
-  }, new Date(0)) || null
+    }, new Date(itemsWithPubDate[0].pubDate!));
+    return isNaN(latestDate.getTime()) ? null : latestDate;
+  })()
 });
 
 export const compatChannelCategoryDtos = (parsedFeed: FeedObject) => {
