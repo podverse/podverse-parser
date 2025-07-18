@@ -47,6 +47,9 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
   timerManager.start(timerFullRunLabel);
 
   try {
+    if (!url || !podcast_index_id) {
+      throw new Error(`parseRSSFeedAndSaveToDatabase: url or podcast_index_id is missing for ${url} ${podcast_index_id}`);
+    }
 
     loggerService.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
     feed = await handleGetRSSFeed(url, podcast_index_id);
