@@ -17,20 +17,20 @@
   "license": "AGPLv3",
   "dependencies": {
     "module-alias": "^2.2.3",
-    "podcast-partytime": "^4.8.1",
-    "podverse-external-services": "^5.0.0",
-    "podverse-helpers": "^5.0.0",
-    "podverse-orm": "^5.0.0"
+    "podcast-partytime": "^4.9.1",
+    "podverse-external-services": "^5.0.3",
+    "podverse-helpers": "^5.1.0",
+    "podverse-orm": "^5.0.5"
   },
   "devDependencies": {
-    "@eslint/config-array": "^0.18.0",
-    "@eslint/eslintrc": "^3.1.0",
-    "@eslint/js": "^9.8.0",
-    "@types/node": "^22.0.0",
-    "eslint": "^9.9.0",
-    "nodemon": "^3.1.4",
+    "@eslint/config-array": "^0.21.0",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.35.0",
+    "@types/node": "^24.4.0",
+    "eslint": "^9.35.0",
+    "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4",
-    "typescript-eslint": "^8.0.1"
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0"
   }
 }
