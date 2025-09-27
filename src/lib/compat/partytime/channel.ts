@@ -9,7 +9,7 @@ export const compatChannelDto = (parsedFeed: FeedObject) => ({
   podcast_guid: parsedFeed.guid?.slice(0, DATABASE_CONSTANTS.varchar_guid) || null,
   title: parsedFeed.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
   sortable_title: createSortableTitle(parsedFeed.title)?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
-  medium: getMediumEnumValue(parsedFeed.medium ?? Phase4Medium.Podcast)
+  medium_id: getMediumEnumValue(parsedFeed.medium ?? Phase4Medium.Podcast)
 });
 
 export const compatChannelAboutDto = (parsedFeed: FeedObject) => ({

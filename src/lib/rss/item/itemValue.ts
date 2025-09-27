@@ -39,7 +39,7 @@ export const handleParsedItemValue = async (
           const channelService = new ChannelService();
           await channelService.update(channel.id, {
             has_value_time_splits: true,
-            medium: channel.medium_id // needed to avoid nulling out medium_id
+            medium_id: channel.medium_id // needed to avoid nulling out medium_id
           });
         }
 
