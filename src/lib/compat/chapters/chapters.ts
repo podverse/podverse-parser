@@ -20,7 +20,7 @@ export const compatParsedChapters = (chapters: PIChapter[]): ItemChapterDto[] =>
       title: chapter.title || null,
       img: isValidHttpUrl(chapter.img) && chapter.img || null,
       web_url: isValidHttpUrl(chapter.url) && chapter.url || null,
-      table_of_contents: chapter.toc || true,
+      table_of_contents: chapter.toc === false ? false : true,
       data_hash
     };
   });
