@@ -6,12 +6,19 @@ const getParsedChapters = async (item_chapters_feed: ItemChaptersFeed) => {
   const itemChaptersFeedLogService = new ItemChaptersFeedLogService();
   try {
     const response = await request(item_chapters_feed.url);
-    const data = response.data as PIChapter[];
-    await itemChaptersFeedLogService.update(item_chapters_feed, {
-      last_http_status: 200,
-      last_good_http_status_time: new Date()
-    });
-    return compatParsedChapters(data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = response.data as any;
+
+    if (data?.chapters) {
+      const chapters = data.chapters as PIChapter[];
+      await itemChaptersFeedLogService.update(item_chapters_feed, {
+        last_http_status: 200,
+        last_good_http_status_time: new Date()
+      });
+      return compatParsedChapters(chapters);
+    } else {
+      throw new Error('No chapters found in feed');
+    }
   } catch (error) {
     // TODO: how to handle errors?
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,20 +42,24 @@ export const parseChapters = async (item: Item): Promise<void> => {
   }
 
   const parsedChapters = await getParsedChapters(item_chapters_feed);
-  
+
   const itemChapterService = new ItemChapterService();
 
-  const existingChapters = await itemChapterService.getAll(item_chapters_feed, { select: ['id'] });
-  const existingChaptersIds = existingChapters.map(item_chapter => item_chapter.id);
-  const updatedChaptersIds: number[] = [];
+  const existingChapters = await itemChapterService.getAll(item_chapters_feed, { select: ['id', 'data_hash'] });
+  const existingChaptersDataHashes = existingChapters.map(item_chapter => item_chapter.data_hash);
+  const updatedChaptersDataHashes: string[] = [];
 
   for (const parsedChapter of parsedChapters) {
-    await itemChapterService.update(item_chapters_feed, parsedChapter);
-    updatedChaptersIds.push(item_chapters_feed.id);
+    updatedChaptersDataHashes.push(parsedChapter.data_hash);
+    if (!existingChaptersDataHashes.includes(parsedChapter.data_hash)) {
+      await itemChapterService.update(item_chapters_feed, parsedChapter);
+    }
   }
 
-  const itemChapterIdsToDelete = existingChaptersIds.filter(id => !updatedChaptersIds.includes(id));
-  await itemChapterService.deleteMany(itemChapterIdsToDelete);
+  const dataHashesToDelete = existingChaptersDataHashes.filter(hash => !updatedChaptersDataHashes.includes(hash));
+  if (dataHashesToDelete.length > 0) {
+    await itemChapterService.deleteManyByDataHash(item_chapters_feed, dataHashesToDelete);
+  }
 
   const itemChaptersFeedLogService = new ItemChaptersFeedLogService();
   await itemChaptersFeedLogService.update(item_chapters_feed, { last_finished_parse_time: new Date() });
