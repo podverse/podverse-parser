@@ -1,5 +1,4 @@
 import { parseFeed } from 'podcast-partytime';
-import { request } from 'podverse-helpers';
 import { ChannelService, ChannelSeasonService, FeedLogService, FeedService, checkIfFeedFlagStatusShouldParse,
   AccountFCMDeviceService, ItemService, checkIfSpamFeed, FeedFlagStatusStatusEnum } from 'podverse-orm';
 import { handleNewItemsNotifications, handleNewLiveItemsNotifications } from '@parser/lib/notifications';
@@ -14,6 +13,7 @@ import { timerManager } from '@parser/factories/timerManager';
 import { loggerService } from '@parser/factories/loggerService';
 import { firebaseAccessTokenServiceFactory } from '@parser/factories/firebaseAccessTokenService';
 import { NotificationsServiceFactory } from '@parser/factories/notificationsService';
+import { _request } from '../_request';
 
 /*
   NOTE: All RSS feeds that have a podcast_index_id will be saved to the database.
@@ -21,7 +21,7 @@ import { NotificationsServiceFactory } from '@parser/factories/notificationsServ
 */
 
 export const getAndParseRSSFeed = async (url: string) => {
-  const response = await request(url);
+  const response = await _request(url);
   const data = response.data as string;
   const parsedFeed = parseFeed(data, { allowMissingGuid: true });
 

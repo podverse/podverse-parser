@@ -1,10 +1,11 @@
 import { FeedObject } from "podcast-partytime";
-import { request, throwRequestError } from "podverse-helpers";
+import { throwRequestError } from "podverse-helpers";
 import { Feed, FeedService, FeedLogService } from "podverse-orm";
 import { getParsedFeedMd5Hash } from "../hash/parsedFeed";
 import { getAndParseRSSFeed } from "../parser";
 import { FeedIsParsingError, FeedNoChangesSinceLastParsedError } from "../errors";
 import { timerManager } from "@parser/factories/timerManager";
+import { _request } from "../../_request";
 
 export const handleGetRSSFeed = async (url: string, podcast_index_id: number): Promise<Feed> => {
   timerManager.start('handleGetRSSFeed');
@@ -22,7 +23,7 @@ export const handleGetRSSFeed = async (url: string, podcast_index_id: number): P
   }
 
   if (!feed) {
-    const response = await request(url, { method: 'HEAD' });
+    const response = await _request(url, { method: 'HEAD' });
     if (!response || response.status < 200 || response.status >= 300) {
       throw new Error(`HEAD request failed for ${url} with status ${response?.status}`);
     }

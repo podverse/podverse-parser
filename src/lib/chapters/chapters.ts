@@ -1,11 +1,12 @@
-import { request, throwRequestError } from "podverse-helpers";
+import { throwRequestError } from "podverse-helpers";
 import { Item, ItemChaptersFeed, ItemChapterService, ItemChaptersFeedLogService } from "podverse-orm";
 import { compatParsedChapters, PIChapter } from "@parser/lib/compat/chapters/chapters";
+import { _request } from "../_request";
 
 const getParsedChapters = async (item_chapters_feed: ItemChaptersFeed) => {
   const itemChaptersFeedLogService = new ItemChaptersFeedLogService();
   try {
-    const response = await request(item_chapters_feed.url);
+    const response = await _request(item_chapters_feed.url);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = response.data as any;
 
