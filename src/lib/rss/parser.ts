@@ -38,7 +38,15 @@ export const getAndParseRSSFeed = async (url: string) => {
 //   return compatData;
 // };
 
-export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_id: number) => {
+type ParseRSSFeedAndSaveToDatabase = {
+  forceParse?: boolean;
+}
+
+export const parseRSSFeedAndSaveToDatabase = async (
+  url: string,
+  podcast_index_id: number,
+  options: ParseRSSFeedAndSaveToDatabase = {}
+) => {
   const feedService = new FeedService();
   let feed = null;
   let channel = null;
@@ -51,7 +59,7 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
       throw new Error(`parseRSSFeedAndSaveToDatabase: url or podcast_index_id is missing for ${url} ${podcast_index_id}`);
     }
 
-    loggerService.info(`parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`);
+    loggerService.info(`parseRSSFeedAndSaveToDatabase url: ${url} podcast_index_id: ${podcast_index_id}`);
     feed = await handleGetRSSFeed(url, podcast_index_id);
 
     if (!checkIfFeedFlagStatusShouldParse(feed.feed_flag_status.id)) {
@@ -59,7 +67,7 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
     }
 
     const parsedFeed = await handleRequestRSSFeed(feed);
-    feed = await handleParsedFeed(parsedFeed, feed);
+    feed = await handleParsedFeed(parsedFeed, feed, options);
     await feedService.update(feed.id, { is_parsing: new Date() });
     
     if (checkIfSpamFeed(parsedFeed)) {
@@ -113,6 +121,7 @@ export const parseRSSFeedAndSaveToDatabase = async (url: string, podcast_index_i
       loggerService.logError('parseRSSFeedAndSaveToDatabase', error as Error);
     }
   } finally {
+    loggerService.info(`Finished parsing channel: ${channel?.id} ${channel?.id_text} feed: ${feed?.id} url: ${url} podcast_index_id: ${podcast_index_id}`);
     timerManager.endAll();
     if (feed) {
       await feedService.update(feed.id, { is_parsing: null });
