@@ -77,8 +77,8 @@ export const handleParsedLiveItems = async (
   const liveItemService = new LiveItemService();
   const existingLiveItems = await liveItemService.getManyByChannel(channel, { relations: ['item', 'live_item_status'] });
   const existingLiveItemMap: Map<string, LiveItem> = new Map(existingLiveItems.map(live_item => [live_item.item.guid, live_item]));
-  const existingLiveItemIds = existingLiveItems.map(live_item => live_item.id);
-  const updatedLiveItemIds: number[] = [];
+  const existingLiveItemItemIds = existingLiveItems.map(live_item => live_item.item.id);
+  const updatedLiveItemItemIds: number[] = [];
   const newItemGuids: string[] = [];
   const liveItemObjDtos = compatLiveItemsDtos(parsedLiveItems);
 
@@ -92,7 +92,7 @@ export const handleParsedLiveItems = async (
         channel,
         channelSeasonIndex,
         existingLiveItemMap,
-        updatedLiveItemIds,
+        updatedLiveItemItemIds,
         newItemGuids,
         transactionalEntityManager,
         timerAccumulator,
@@ -103,9 +103,9 @@ export const handleParsedLiveItems = async (
 
   logTimerAccumulator(timerAccumulator);
 
-  const itemIdsToDelete = existingLiveItemIds.filter(id => !updatedLiveItemIds.includes(id));
+  const itemIdsToDelete = existingLiveItemItemIds.filter(id => !updatedLiveItemItemIds.includes(id));
   const itemsToDelete = existingLiveItems
-    .filter(liveItem => itemIdsToDelete.includes(liveItem.id))
+    .filter(liveItem => itemIdsToDelete.includes(liveItem.item.id))
     .map(liveItem => liveItem.item);
   await itemService.updateManyFlagStatus(itemsToDelete, ItemFlagStatusStatusEnum.PendingArchive);
 
