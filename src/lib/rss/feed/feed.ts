@@ -79,11 +79,22 @@ export const handleRequestRSSFeed = async (feed: Feed): Promise<FeedObject> => {
   return parsedFeed;
 };
 
-export const handleParsedFeed = async (parsedFeed: FeedObject, feed: Feed): Promise<Feed> => {
+type HandleParsedFeedOptions = {
+  forceParse?: boolean;
+}
+
+export const handleParsedFeed = async (
+  parsedFeed: FeedObject,
+  feed: Feed,
+  options: HandleParsedFeedOptions = {}
+): Promise<Feed> => {
   const currentFeedFileHash = getParsedFeedMd5Hash(parsedFeed);
   
   checkIfFeedIsParsing(feed);
-  if (feed.last_parsed_file_hash === currentFeedFileHash) {
+  if (
+    !options.forceParse &&
+    feed.last_parsed_file_hash === currentFeedFileHash
+  ) {
     throw new FeedNoChangesSinceLastParsedError(feed.id);
   }
   
