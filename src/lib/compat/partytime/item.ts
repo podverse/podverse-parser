@@ -35,7 +35,7 @@ export const compatItemChaptersFeedDto = (parsedItem: Episode) => {
 };
 
 export const compatItemChatDto = (parsedItem: Episode) => {
-  if (!parsedItem.chat) {
+  if (!parsedItem.chat || !parsedItem.chat.server || !parsedItem.chat.protocol) {
     return null;
   }
   return {
