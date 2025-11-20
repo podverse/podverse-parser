@@ -1,6 +1,6 @@
 {
   "name": "podverse-parser",
-  "version": "5.1.3-develop",
+  "version": "5.1.4-develop",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
