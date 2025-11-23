@@ -63,7 +63,7 @@ export const parseRSSFeedAndSaveToDatabase = async (
     feed = await handleGetRSSFeed(url, podcast_index_id);
 
     if (!checkIfFeedFlagStatusShouldParse(feed.feed_flag_status.id)) {
-      throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not Active or AlwaysAllow for ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
+      throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not Active or AlwaysAllow for ${feed.id} ${feed.podcast_index_id} ${feed.url}`);
     }
 
     const parsedFeed = await handleRequestRSSFeed(feed);
@@ -76,7 +76,7 @@ export const parseRSSFeedAndSaveToDatabase = async (
     }
 
     const channelService = new ChannelService();
-    channel = await channelService.getOrCreateByFeed({ feed });
+    channel = await channelService.getOrCreateByFeed(feed);
     
     await handleParsedChannelSeasons(parsedFeed, channel);
     const channelSeasonService = new ChannelSeasonService();
