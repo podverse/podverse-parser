@@ -43,7 +43,10 @@ const handleRemoteItemsFeedParsing = async (feedGuidsToParse: string[]) => {
 
   for (const piFeedData of piFeedDatas) {
     const feedService = new FeedService();
-    let feed = await feedService.getByUrlAndPodcastIndexId({ url: piFeedData.url, podcast_index_id: piFeedData.id });
+    let feed = await feedService.getByUrlAndPodcastIndexId({
+      url: piFeedData.url,
+      podcast_index_id: piFeedData.id
+    });
     
     if (!feed) {
       await handleRequestDelay(piFeedData.url);

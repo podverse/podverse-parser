@@ -12,7 +12,10 @@ export const handleGetRSSFeed = async (url: string, podcast_index_id: number): P
 
   const feedService = new FeedService();
 
-  let feed = await feedService.getByUrlAndPodcastIndexId({ url, podcast_index_id });
+  let feed = await feedService.getByUrlAndPodcastIndexId({
+    url,
+    podcast_index_id
+  });
   
   if (!feed) {
     feed = await feedService.getByPodcastIndexId({ podcast_index_id });

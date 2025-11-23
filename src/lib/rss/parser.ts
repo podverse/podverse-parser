@@ -39,7 +39,7 @@ export const getAndParseRSSFeed = async (url: string) => {
 // };
 
 type ParseRSSFeedAndSaveToDatabase = {
-  forceParse?: boolean;
+  forceParse?: boolean; // If true, will parse fully without checking for changes.
 }
 
 export const parseRSSFeedAndSaveToDatabase = async (
@@ -72,11 +72,11 @@ export const parseRSSFeedAndSaveToDatabase = async (
     
     if (checkIfSpamFeed(parsedFeed)) {
       await feedService.updateFlagStatus(feed, FeedFlagStatusStatusEnum.Spam);
-      throw new Error(`parseRSSFeedAndSaveToDatabase: feed is spam ${feed.id} ${feed.channel.podcast_index_id} ${feed.url}`);
+      throw new Error(`parseRSSFeedAndSaveToDatabase: feed is spam ${feed.id} ${feed.podcast_index_id} ${feed.url}`);
     }
 
     const channelService = new ChannelService();
-    channel = await channelService.getOrCreateByPodcastIndexId({ feed, podcast_index_id });
+    channel = await channelService.getOrCreateByFeed({ feed });
     
     await handleParsedChannelSeasons(parsedFeed, channel);
     const channelSeasonService = new ChannelSeasonService();
