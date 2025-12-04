@@ -1,7 +1,7 @@
 import { parseFeed } from 'podcast-partytime';
 import { ChannelService, ChannelSeasonService, FeedLogService, FeedService, checkIfFeedFlagStatusShouldParse,
-  AccountFCMDeviceService, ItemService, checkIfSpamFeed, FeedFlagStatusStatusEnum } from 'podverse-orm';
-import { handleNewItemsNotifications, handleNewLiveItemsNotifications } from '@parser/lib/notifications';
+  /* AccountFCMDeviceService, ItemService, */ checkIfSpamFeed, FeedFlagStatusStatusEnum } from 'podverse-orm';
+// import { handleNewItemsNotifications, handleNewLiveItemsNotifications } from '@parser/lib/notifications';
 import { handleParsedChannel } from "@parser/lib/rss/channel/channel";
 import { handleParsedChannelSeasons } from '@parser/lib/rss/channel/channelSeason';
 import { handleRequestRSSFeed, handleParsedFeed, handleGetRSSFeed } from '@parser/lib/rss/feed/feed';
@@ -11,8 +11,8 @@ import { handleAllRemoteItemsFeedParsing } from '@parser/lib/rss/remoteItemParse
 import { FeedIsParsingError, FeedNoChangesSinceLastParsedError } from './errors';
 import { timerManager } from '@parser/factories/timerManager';
 import { loggerService } from '@parser/factories/loggerService';
-import { firebaseAccessTokenServiceFactory } from '@parser/factories/firebaseAccessTokenService';
-import { NotificationsServiceFactory } from '@parser/factories/notificationsService';
+// import { firebaseAccessTokenServiceFactory } from '@parser/factories/firebaseAccessTokenService';
+// import { NotificationsServiceFactory } from '@parser/factories/notificationsService';
 import { _request } from '../_request';
 
 /*
@@ -94,19 +94,19 @@ export const parseRSSFeedAndSaveToDatabase = async (
     }
 
     if (newItemIdentifiers.newItemGuids.length > 0 || newLiveItemIdentifiers.newItemGuids.length > 0) {
-      const firebaseAccessTokenService = firebaseAccessTokenServiceFactory();
-      const googleAuthToken = await firebaseAccessTokenService.generateAccessToken();
-      const notificationsService = NotificationsServiceFactory(googleAuthToken);
-      const accountFCMDeviceService = new AccountFCMDeviceService();
-      const itemService = new ItemService();
+      // const firebaseAccessTokenService = firebaseAccessTokenServiceFactory();
+      // const googleAuthToken = await firebaseAccessTokenService.generateAccessToken();
+      // const notificationsService = NotificationsServiceFactory(googleAuthToken);
+      // const accountFCMDeviceService = new AccountFCMDeviceService();
+      // const itemService = new ItemService();
       
-      if (newItemIdentifiers.newItemGuids.length > 0) {
-        await handleNewItemsNotifications(newItemIdentifiers, channel, notificationsService, accountFCMDeviceService, itemService);
-      }
+      // if (newItemIdentifiers.newItemGuids.length > 0) {
+      //   await handleNewItemsNotifications(newItemIdentifiers, channel, notificationsService, accountFCMDeviceService, itemService);
+      // }
 
-      if (newLiveItemIdentifiers.newItemGuids.length > 0) {
-        await handleNewLiveItemsNotifications(newLiveItemIdentifiers, channel, notificationsService, accountFCMDeviceService, itemService);
-      }
+      // if (newLiveItemIdentifiers.newItemGuids.length > 0) {
+      //   await handleNewLiveItemsNotifications(newLiveItemIdentifiers, channel, notificationsService, accountFCMDeviceService, itemService);
+      // }
     }
 
     const feedLogService = new FeedLogService();
