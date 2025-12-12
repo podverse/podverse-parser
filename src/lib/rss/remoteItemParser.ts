@@ -51,7 +51,7 @@ const handleRemoteItemsFeedParsing = async (feedGuidsToParse: string[]) => {
     if (!feed) {
       await handleRequestDelay(piFeedData.url);
       loggerService.info(`handleRemoteItemsFeedParsing: ${piFeedData.url} ${piFeedData.id}`);
-      await parseRSSFeedAndSaveToDatabase(piFeedData.url, piFeedData.id);
+      await parseRSSFeedAndSaveToDatabase(piFeedData.url, piFeedData.id, { forceParse: false });
     }
   }
 };

@@ -38,14 +38,14 @@ export const getAndParseRSSFeed = async (url: string) => {
 //   return compatData;
 // };
 
-type ParseRSSFeedAndSaveToDatabase = {
+export type ParseRSSFeedAndSaveToDatabase = {
   forceParse?: boolean; // If true, will parse fully without checking for changes.
 }
 
 export const parseRSSFeedAndSaveToDatabase = async (
   url: string,
   podcast_index_id: number,
-  options: ParseRSSFeedAndSaveToDatabase = {}
+  options: ParseRSSFeedAndSaveToDatabase
 ) => {
   const feedService = new FeedService();
   let feed = null;
