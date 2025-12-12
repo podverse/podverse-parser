@@ -1,4 +1,4 @@
-import { parseFeed } from 'podcast-partytime';
+import { FeedObject, parseFeed } from 'podcast-partytime';
 import { ChannelService, ChannelSeasonService, FeedLogService, FeedService, checkIfFeedFlagStatusShouldParse,
   /* AccountFCMDeviceService, ItemService, */ checkIfSpamFeed, FeedFlagStatusStatusEnum } from 'podverse-orm';
 // import { handleNewItemsNotifications, handleNewLiveItemsNotifications } from '@parser/lib/notifications';
@@ -14,6 +14,7 @@ import { loggerService } from '@parser/factories/loggerService';
 // import { firebaseAccessTokenServiceFactory } from '@parser/factories/firebaseAccessTokenService';
 // import { NotificationsServiceFactory } from '@parser/factories/notificationsService';
 import { _request } from '../_request';
+import { getParsedFeedMd5Hash } from './hash/parsedFeed';
 
 /*
   NOTE: All RSS feeds that have a podcast_index_id will be saved to the database.
@@ -54,6 +55,8 @@ export const parseRSSFeedAndSaveToDatabase = async (
   const timerFullRunLabel = `parseRSSFeedAndSaveToDatabase ${url} ${podcast_index_id}`;
   timerManager.start(timerFullRunLabel);
 
+  let parsedFeed: FeedObject | null = null;
+
   try {
     if (!url || !podcast_index_id) {
       throw new Error(`parseRSSFeedAndSaveToDatabase: url or podcast_index_id is missing for ${url} ${podcast_index_id}`);
@@ -66,7 +69,7 @@ export const parseRSSFeedAndSaveToDatabase = async (
       throw new Error(`parseRSSFeedAndSaveToDatabase: feed_flag_status.status is not Active or AlwaysAllow for ${feed.id} ${feed.podcast_index_id} ${feed.url}`);
     }
 
-    const parsedFeed = await handleRequestRSSFeed(feed);
+    parsedFeed = await handleRequestRSSFeed(feed);
     feed = await handleParsedFeed(parsedFeed, feed, options);
     await feedService.update(feed.id, { is_parsing: new Date() });
     
@@ -124,7 +127,13 @@ export const parseRSSFeedAndSaveToDatabase = async (
     loggerService.info(`Finished parsing channel: ${channel?.id} ${channel?.id_text} feed: ${feed?.id} url: ${url} podcast_index_id: ${podcast_index_id}`);
     timerManager.endAll();
     if (feed) {
-      await feedService.update(feed.id, { is_parsing: null });
+      if (parsedFeed) {
+        const currentFeedFileHash = getParsedFeedMd5Hash(parsedFeed);
+        await feedService.update(feed.id, {
+          is_parsing: null,
+          last_parsed_file_hash: currentFeedFileHash
+        });
+      }
     }
   }
 

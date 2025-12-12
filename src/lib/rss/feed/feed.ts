@@ -102,7 +102,7 @@ export const handleParsedFeed = async (
   }
   
   const feedService = new FeedService();
-  return feedService.update(feed.id, { last_parsed_file_hash: currentFeedFileHash });
+  return feedService.update(feed.id, { last_parsed_file_hash: null });
 };
 
 const checkIfFeedIsParsing = (feed: Feed): void => {
