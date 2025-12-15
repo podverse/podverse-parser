@@ -1,6 +1,21 @@
+import {
+  OnDemandParserEventType,
+  ON_DEMAND_ADD_PARSER_LIMIT,
+  ON_DEMAND_REFRESH_PARSER_LIMIT,
+  getOnDemandParserEventDateRange
+} from 'podverse-helpers';
 import { FeedObject, parseFeed } from 'podcast-partytime';
-import { ChannelService, ChannelSeasonService, FeedLogService, FeedService, checkIfFeedFlagStatusShouldParse,
-  /* AccountFCMDeviceService, ItemService, */ checkIfSpamFeed, FeedFlagStatusStatusEnum } from 'podverse-orm';
+import {
+  ChannelService,
+  ChannelSeasonService,
+  FeedLogService,
+  FeedService,
+  checkIfFeedFlagStatusShouldParse,
+  checkIfSpamFeed,
+  FeedFlagStatusStatusEnum,
+  OnDemandParserEventService,
+  AccountService,
+} from 'podverse-orm';
 // import { handleNewItemsNotifications, handleNewLiveItemsNotifications } from '@parser/lib/notifications';
 import { handleParsedChannel } from "@parser/lib/rss/channel/channel";
 import { handleParsedChannelSeasons } from '@parser/lib/rss/channel/channelSeason';
@@ -39,15 +54,42 @@ export const getAndParseRSSFeed = async (url: string) => {
 //   return compatData;
 // };
 
-export type ParseRSSFeedAndSaveToDatabase = {
-  forceParse?: boolean; // If true, will parse fully without checking for changes.
+export type ParseRSSOnDemandParserEvent = {
+  accountId: number | null;
+  remoteParentPodcastIndexId: number | null;
+  type: OnDemandParserEventType | null;
+}
+
+export type ParseRSSFeedAndSaveToDatabaseOptions = {
+  forceParse: boolean; // If true, will parse fully without checking for changes.
+  onDemandParserEvent: ParseRSSOnDemandParserEvent;
 }
 
 export const parseRSSFeedAndSaveToDatabase = async (
   url: string,
   podcast_index_id: number,
-  options: ParseRSSFeedAndSaveToDatabase
+  options: ParseRSSFeedAndSaveToDatabaseOptions
 ) => {
+  const { onDemandParserEvent } = options;
+  const onDemandParserEventService = new OnDemandParserEventService();
+
+  if (onDemandParserEvent) {
+    const { accountId, type } = onDemandParserEvent;
+    if (accountId && type) {
+      if (type === OnDemandParserEventType.ADD) {
+        const count = await onDemandParserEventService.getCountByAccountIdAndTypeSince(accountId, OnDemandParserEventType.ADD, getOnDemandParserEventDateRange());
+        if (count >= ON_DEMAND_ADD_PARSER_LIMIT) {
+          throw new Error('Monthly on-demand add feed parser limit reached');
+        }
+      } else if (type === OnDemandParserEventType.REFRESH) {
+        const count = await onDemandParserEventService.getCountByAccountIdAndTypeSince(accountId, OnDemandParserEventType.REFRESH, getOnDemandParserEventDateRange());
+        if (count >= ON_DEMAND_REFRESH_PARSER_LIMIT) {
+          throw new Error('Monthly on-demand refresh feed parser limit reached');
+        }
+      }
+    }
+  }
+
   const feedService = new FeedService();
   let feed = null;
   let channel = null;
@@ -135,10 +177,29 @@ export const parseRSSFeedAndSaveToDatabase = async (
         });
       }
     }
+
+    if (onDemandParserEvent) {
+      const { accountId, remoteParentPodcastIndexId, type } = onDemandParserEvent;
+      if (accountId && type) {
+        const accountService = new AccountService();
+        const account = await accountService.get(accountId);
+        if (account) {
+          await onDemandParserEventService.create({
+            account,
+            podcastIndexId: podcast_index_id,
+            remoteParentPodcastIndexId: remoteParentPodcastIndexId,
+            type,
+          });
+        }
+      }
+    }
   }
 
   if (channel) {
-    await handleAllRemoteItemsFeedParsing(channel);
+    await handleAllRemoteItemsFeedParsing(channel, {
+      accountId: onDemandParserEvent?.accountId || null,
+      remoteParentPodcastIndexId: podcast_index_id,
+    });
   }
   
   return;
