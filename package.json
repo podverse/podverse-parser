@@ -8,7 +8,7 @@
     "dist/**/*"
   ],
   "scripts": {
-    "build:watch": "nodemon --watch 'src' --watch $(realpath node_modules/podverse-helpers) --watch $(realpath node_modules/podverse-orm) --delay 500ms -x \"npm run build\"",
+    "build:watch": "nodemon --watch 'src' --watch $(realpath node_modules/podverse-helpers) --watch $(realpath node_modules/podverse-partytime) --watch $(realpath node_modules/podverse-orm) --delay 500ms -x \"npm run build\"",
     "build": "tsc",
     "lint": "eslint ./src --ext .ts",
     "start": "ts-node ./dist/index.js"
@@ -17,7 +17,7 @@
   "license": "AGPLv3",
   "dependencies": {
     "module-alias": "^2.2.3",
-    "podcast-partytime": "^4.9.1",
+    "podverse-partytime": "^1.0.0",
     "podverse-external-services": "^5.0.3",
     "podverse-helpers": "^5.1.0",
     "podverse-orm": "^5.0.5"
