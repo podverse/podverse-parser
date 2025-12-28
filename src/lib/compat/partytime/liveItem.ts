@@ -1,4 +1,4 @@
-import { Phase4PodcastLiveItem } from "podcast-partytime/dist/parser/phase/phase-4";
+import { Phase4PodcastLiveItem } from "podverse-partytime/dist/parser/phase/phase-4";
 // import { isValidHttpUrl } from "podverse-helpers";
 import { getLiveItemStatusEnumValue, LiveItemStatusEnum } from "podverse-orm";
 

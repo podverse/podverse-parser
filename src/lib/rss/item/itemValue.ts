@@ -1,4 +1,4 @@
-import { Episode } from "podcast-partytime";
+import { Episode } from "podverse-partytime";
 import { EntityManager, Item, ItemValueService, ItemValueRecipientService, ItemValueTimeSplitService,
   ItemValueTimeSplitRecipientService, ItemValueTimeSplitRemoteItemService,
   ChannelService,

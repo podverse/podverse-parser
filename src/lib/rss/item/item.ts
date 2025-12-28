@@ -1,4 +1,4 @@
-import { Episode } from "podcast-partytime";
+import { Episode } from "podverse-partytime";
 import { chunkArray, DATABASE_CONSTANTS, formatGuidEnclosureUrl } from "podverse-helpers";
 import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, ItemService } from "podverse-orm";
 import { compatItemDto } from "@parser/lib/compat/partytime/item";

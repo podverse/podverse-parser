@@ -1,4 +1,4 @@
-import { FeedObject } from "podcast-partytime";
+import { FeedObject } from "podverse-partytime";
 import { Channel, ChannelSocialInteractService, EntityManager } from "podverse-orm";
 import { compatChannelSocialInteractDtos } from "@parser/lib/compat/partytime/channel";
 import { handleParsedManyData } from "../base/handleParsedManyData";

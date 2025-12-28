@@ -1,4 +1,4 @@
-import { FeedObject } from "podcast-partytime";
+import { FeedObject } from "podverse-partytime";
 import { Channel, ChannelValueService, ChannelValueRecipientService, EntityManager } from "podverse-orm";
 import { compatChannelValueDtos } from "@parser/lib/compat/partytime/channel";
 import { timerManager } from "@parser/factories/timerManager";

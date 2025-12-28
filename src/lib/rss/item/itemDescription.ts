@@ -1,4 +1,4 @@
-import { Episode } from "podcast-partytime";
+import { Episode } from "podverse-partytime";
 import { EntityManager, Item, ItemDescriptionService } from "podverse-orm";
 import { compatItemDescriptionDto } from "@parser/lib/compat/partytime/item";
 import { handleParsedOneData } from "../base/handleParsedOneData";

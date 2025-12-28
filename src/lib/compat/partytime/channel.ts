@@ -1,16 +1,18 @@
-import { FeedObject, Phase4Medium } from "podcast-partytime";
-import { Phase4PodcastImage } from "podcast-partytime/dist/parser/phase/phase-4";
+import { FeedObject, Phase4Medium } from "podverse-partytime";
+import { Phase4PodcastImage } from "podverse-partytime/dist/parser/phase/phase-4";
 import { createSortableTitle, DATABASE_CONSTANTS, getBooleanOrNull, getCategoryEnumValue,
   getMediumEnumValue, isValidHttpUrl } from "podverse-helpers";
 import { getChannelItunesTypeItunesTypeEnumValue } from "podverse-orm";
 import { compatChannelValue } from "@parser/lib/compat/partytime/value";
 
-export const compatChannelDto = (parsedFeed: FeedObject) => ({
-  podcast_guid: parsedFeed.guid?.slice(0, DATABASE_CONSTANTS.varchar_guid) || null,
-  title: parsedFeed.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
-  sortable_title: createSortableTitle(parsedFeed.title)?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
-  medium_id: getMediumEnumValue(parsedFeed.medium ?? Phase4Medium.Podcast)
-});
+export const compatChannelDto = (parsedFeed: FeedObject) => {
+  return {
+    podcast_guid: parsedFeed.guid?.slice(0, DATABASE_CONSTANTS.varchar_guid) || null,
+    title: parsedFeed.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
+    sortable_title: createSortableTitle(parsedFeed.title)?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
+    medium_id: getMediumEnumValue(parsedFeed.medium ?? Phase4Medium.Podcast)
+  };
+};
 
 export const compatChannelAboutDto = (parsedFeed: FeedObject) => ({
   author: (

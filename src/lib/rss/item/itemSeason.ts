@@ -1,4 +1,4 @@
-import { Episode } from "podcast-partytime";
+import { Episode } from "podverse-partytime";
 import { ChannelSeasonIndex, EntityManager, Item, ItemSeasonDto,
   ItemSeasonService } from "podverse-orm";
 import { compatItemSeasonDto } from "@parser/lib/compat/partytime/item";

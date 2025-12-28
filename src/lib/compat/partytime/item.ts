@@ -1,5 +1,5 @@
-import type { Episode } from 'podcast-partytime';
-import { Phase4PodcastImage } from 'podcast-partytime/dist/parser/phase/phase-4';
+import type { Episode } from 'podverse-partytime';
+import { Phase4PodcastImage } from 'podverse-partytime/dist/parser/phase/phase-4';
 import { DATABASE_CONSTANTS, formatGuidEnclosureUrl, isValidHttpUrl } from 'podverse-helpers';
 import { getItemItunesEpisodeTypeEnumValue } from 'podverse-orm';
 import { compatItemValue } from '@parser/lib/compat/partytime/value';
@@ -106,7 +106,7 @@ export const compatItemEnclosureDtos = (parsedItem: Episode) => {
         PTDO: why am I getting this error when I don't use any?
         src/lib/compat/partytime/item.ts:50:14 - error TS4023: Exported variable
         'compatItemEnclosureDtos' has or is using name 'IntegrityType' from external module
-        "/podverse-parser/node_modules/podcast-partytime/dist/parser/phase/phase-3" but cannot be named.
+        "/podverse-parser/node_modules/podverse-partytime/dist/parser/phase/phase-3" but cannot be named.
       */
       const item_enclosure_integrity = (alternativeEnclosure.integrity as any) || null;
       

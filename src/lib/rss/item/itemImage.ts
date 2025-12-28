@@ -1,4 +1,4 @@
-import { Episode } from "podcast-partytime";
+import { Episode } from "podverse-partytime";
 import { EntityManager, Item, ItemImageService } from "podverse-orm";
 import { compatItemImageDtos } from "@parser/lib/compat/partytime/item";
 import { handleParsedManyData } from "../base/handleParsedManyData";

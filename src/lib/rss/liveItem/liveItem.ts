@@ -1,4 +1,4 @@
-import { Phase4PodcastLiveItem } from "podcast-partytime/dist/parser/phase/phase-4";
+import { Phase4PodcastLiveItem } from "podverse-partytime/dist/parser/phase/phase-4";
 import { chunkArray } from "podverse-helpers";
 import { AppDataSourceReadWrite, Channel, ChannelSeasonIndex, getLiveItemStatusEnumValue, ItemService, LiveItemService, LiveItemStatusEnum, LiveItem } from "podverse-orm";
 import { compatLiveItemsDtos } from "@parser/lib/compat/partytime/liveItem";

@@ -4,7 +4,7 @@ import {
   ON_DEMAND_REFRESH_PARSER_LIMIT,
   getOnDemandParserEventDateRange
 } from 'podverse-helpers';
-import { FeedObject, parseFeed } from 'podcast-partytime';
+import { FeedObject, parseFeed } from 'podverse-partytime';
 import {
   ChannelService,
   ChannelSeasonService,

@@ -1,4 +1,4 @@
-import { Phase4Value, Phase4ValueRecipient } from "podcast-partytime";
+import { Phase4Value, Phase4ValueRecipient } from "podverse-partytime";
 import { DATABASE_CONSTANTS, isValidHttpUrl } from 'podverse-helpers';
 
 export const compatChannelValue = (value: Phase4Value) => {
