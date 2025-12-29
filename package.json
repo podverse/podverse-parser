@@ -1,6 +1,6 @@
 {
   "name": "podverse-parser",
-  "version": "5.1.11-develop",
+  "version": "5.1.12-develop",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,7 +17,7 @@
   "license": "AGPLv3",
   "dependencies": {
     "module-alias": "^2.2.3",
-    "podverse-partytime": "^1.0.0",
+    "podverse-partytime": "^5.0.0",
     "podverse-external-services": "^5.0.3",
     "podverse-helpers": "^5.1.0",
     "podverse-orm": "^5.0.5"
