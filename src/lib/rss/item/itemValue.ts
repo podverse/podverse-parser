@@ -1,4 +1,5 @@
 import { Episode } from "podverse-partytime";
+import { hasValidFeedUuid } from "podverse-helpers";
 import { EntityManager, Item, ItemValueService, ItemValueRecipientService, ItemValueTimeSplitService,
   ItemValueTimeSplitRecipientService, ItemValueTimeSplitRemoteItemService,
   ChannelService,
@@ -57,6 +58,9 @@ export const handleParsedItemValue = async (
 
           const itemValueTimeSplitRemoteItemDto = itemValueTimeSplitDto.item_value_time_splits_remote_item;
           if (itemValueTimeSplitRemoteItemDto) {
+            if (!hasValidFeedUuid(itemValueTimeSplitRemoteItemDto)) {
+              continue;
+            }
             await itemValueTimeSplitRemoteItemService.update(item_value_time_split, itemValueTimeSplitRemoteItemDto);
           } else {
             await itemValueTimeSplitRemoteItemService.deleteAll(item_value_time_split);
