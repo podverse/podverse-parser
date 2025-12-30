@@ -17,10 +17,10 @@
   "license": "AGPLv3",
   "dependencies": {
     "module-alias": "^2.2.3",
-    "podverse-partytime": "^5.0.0",
-    "podverse-external-services": "^5.0.3",
-    "podverse-helpers": "^5.1.0",
-    "podverse-orm": "^5.0.5"
+    "podverse-external-services": "^5.1.12",
+    "podverse-helpers": "^5.1.12",
+    "podverse-orm": "^5.1.12",
+    "podverse-partytime": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/config-array": "^0.21.0",
