@@ -2,7 +2,8 @@ import {
   OnDemandParserEventType,
   ON_DEMAND_ADD_PARSER_LIMIT,
   ON_DEMAND_REFRESH_PARSER_LIMIT,
-  getOnDemandParserEventDateRange
+  getOnDemandParserEventDateRange,
+  sleep
 } from 'podverse-helpers';
 import { FeedObject, parseFeed } from 'podverse-partytime';
 import {
@@ -30,6 +31,7 @@ import { loggerService } from '@parser/factories/loggerService';
 // import { NotificationsServiceFactory } from '@parser/factories/notificationsService';
 import { _request } from '../_request';
 import { getParsedFeedMd5Hash } from './hash/parsedFeed';
+import { config } from '@parser/config';
 
 /*
   NOTE: All RSS feeds that have a podcast_index_id will be saved to the database.
@@ -63,6 +65,20 @@ export type ParseRSSOnDemandParserEvent = {
 export type ParseRSSFeedAndSaveToDatabaseOptions = {
   forceParse: boolean; // If true, will parse fully without checking for changes.
   onDemandParserEvent: ParseRSSOnDemandParserEvent;
+}
+
+// Handle request delay for specific domains to avoid rate limiting
+async function handleRateLimitRequestDelay(url: string) {
+  const delayConfig = [
+    { regex: /^https?:\/\/(www\.)?wavlake\.com/, delay: 5000 },
+  ];
+
+  for (const { regex, delay } of delayConfig) {
+    if (regex.test(url)) {
+      await sleep(delay);
+      break;
+    }
+  }
 }
 
 export const parseRSSFeedAndSaveToDatabase = async (
@@ -103,6 +119,8 @@ export const parseRSSFeedAndSaveToDatabase = async (
     if (!url || !podcast_index_id) {
       throw new Error(`parseRSSFeedAndSaveToDatabase: url or podcast_index_id is missing for ${url} ${podcast_index_id}`);
     }
+
+    await handleRateLimitRequestDelay(url);
 
     loggerService.info(`parseRSSFeedAndSaveToDatabase url: ${url} podcast_index_id: ${podcast_index_id}`);
     feed = await handleGetRSSFeed(url, podcast_index_id);
@@ -195,13 +213,16 @@ export const parseRSSFeedAndSaveToDatabase = async (
     }
   }
 
-  if (channel) {
-    await handleAllRemoteItemsFeedParsing(channel, {
-      accountId: onDemandParserEvent?.accountId || null,
-      remoteParentPodcastIndexId: podcast_index_id,
-    });
+  if (config.parser.addRemoteItemsToMQ) {
+    if (channel) {
+      const remoteItems = await handleAllRemoteItemsFeedParsing(channel, {
+        accountId: onDemandParserEvent?.accountId || null,
+        remoteParentPodcastIndexId: podcast_index_id,
+      });
+      return { remoteItemsToParse: remoteItems };
+    }
   }
   
-  return;
+  return { remoteItemsToParse: [] };
 };
 
