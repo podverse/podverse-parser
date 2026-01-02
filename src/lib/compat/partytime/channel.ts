@@ -4,13 +4,18 @@ import { createSortableTitle, DATABASE_CONSTANTS, getBooleanOrNull, getCategoryE
   getMediumEnumValue, isValidHttpUrl } from "podverse-helpers";
 import { getChannelItunesTypeItunesTypeEnumValue } from "podverse-orm";
 import { compatChannelValue } from "@parser/lib/compat/partytime/value";
+import { detectDuckTypedPublisherMediumId } from './publisher';
 
 export const compatChannelDto = (parsedFeed: FeedObject) => {
+  let medium_id = getMediumEnumValue(parsedFeed.medium ?? Phase4Medium.Podcast);
+  const detected = detectDuckTypedPublisherMediumId(parsedFeed);
+  if (detected !== null) medium_id = detected;
+
   return {
     podcast_guid: parsedFeed.guid?.slice(0, DATABASE_CONSTANTS.varchar_guid) || null,
     title: parsedFeed.title?.slice(0, DATABASE_CONSTANTS.varchar_normal) || null,
     sortable_title: createSortableTitle(parsedFeed.title)?.slice(0, DATABASE_CONSTANTS.varchar_short) || null,
-    medium_id: getMediumEnumValue(parsedFeed.medium ?? Phase4Medium.Podcast)
+    medium_id
   };
 };
 
