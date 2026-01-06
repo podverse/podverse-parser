@@ -8,7 +8,10 @@ import { timerManager } from "@parser/factories/timerManager";
 import { loggerService } from "@parser/factories/loggerService";
 
 export type HandleParsedLiveItemsResult = {
-  newItemGuids: string[];
+  /** GUIDs of live items that are new or changed to "pending" status */
+  pendingItemGuids: string[];
+  /** GUIDs of live items that are new or changed to "live" status */
+  liveItemGuids: string[];
 };
 
 type LiveItemObjDto = {
@@ -24,7 +27,8 @@ const processLiveItemBatch = async (
   channelSeasonIndex: ChannelSeasonIndex,
   existingLiveItemMap: Map<string, LiveItem>,
   updatedLiveItemIds: number[],
-  newItemGuids: string[],
+  pendingItemGuids: string[],
+  liveItemGuids: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transactionalEntityManager: any, 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,14 +50,28 @@ const processLiveItemBatch = async (
     updatedLiveItemIds.push(item.id);
 
     const existingLiveItem = existingLiveItemMap.get(itemDto.guid);
-    const itemStatusEnum = getLiveItemStatusEnumValue(itemDto.status);
+    const newStatusEnum = getLiveItemStatusEnumValue(itemDto.status);
 
-    if (
-      !existingLiveItem ||
-      (existingLiveItem.live_item_status.id !== LiveItemStatusEnum.Ended && itemStatusEnum === LiveItemStatusEnum.Ended)
-    ) {
-      newItemGuids.push(itemDto.guid);
+    // Determine if we should send a notification based on status changes
+    // Send notifications when:
+    // 1. New live item with pending or live status
+    // 2. Existing live item that changed to pending or live status
+    const isNewLiveItem = !existingLiveItem;
+    const previousStatus = existingLiveItem?.live_item_status_id;
+    const statusChanged = previousStatus !== newStatusEnum;
+
+    if (newStatusEnum === LiveItemStatusEnum.Pending) {
+      // Send pending notification if new or status changed to pending
+      if (isNewLiveItem || statusChanged) {
+        pendingItemGuids.push(itemDto.guid);
+      }
+    } else if (newStatusEnum === LiveItemStatusEnum.Live) {
+      // Send live notification if new or status changed to live
+      if (isNewLiveItem || statusChanged) {
+        liveItemGuids.push(itemDto.guid);
+      }
     }
+    // No notification for "ended" status
 
     const liveItemDto = liveItemObjDto.liveItem;
     await liveItemService.update(item, liveItemDto);
@@ -79,7 +97,8 @@ export const handleParsedLiveItems = async (
   const existingLiveItemMap: Map<string, LiveItem> = new Map(existingLiveItems.map(live_item => [live_item.item.guid, live_item]));
   const existingLiveItemItemIds = existingLiveItems.map(live_item => live_item.item.id);
   const updatedLiveItemItemIds: number[] = [];
-  const newItemGuids: string[] = [];
+  const pendingItemGuids: string[] = [];
+  const liveItemGuids: string[] = [];
   const liveItemObjDtos = compatLiveItemsDtos(parsedLiveItems);
 
   const timerAccumulator = createItemTimerAccumulator();
@@ -93,7 +112,8 @@ export const handleParsedLiveItems = async (
         channelSeasonIndex,
         existingLiveItemMap,
         updatedLiveItemItemIds,
-        newItemGuids,
+        pendingItemGuids,
+        liveItemGuids,
         transactionalEntityManager,
         timerAccumulator,
         liveItemService
@@ -109,5 +129,5 @@ export const handleParsedLiveItems = async (
     .map(liveItem => liveItem.item);
   await itemService.updateManyFlagStatus(itemsToDelete, ItemFlagStatusStatusEnum.PendingArchive);
 
-  return { newItemGuids };
+  return { pendingItemGuids, liveItemGuids };
 };

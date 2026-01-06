@@ -32,6 +32,8 @@ import { loggerService } from '@parser/factories/loggerService';
 import { _request } from '../_request';
 import { getParsedFeedMd5Hash } from './hash/parsedFeed';
 import { config } from '@parser/config';
+import { handleNewItemNotifications } from '../notifications/handleNewItemNotifications';
+import { handleNewLiveItemNotifications } from '../notifications/handleNewLiveItemNotifications';
 
 /*
   NOTE: All RSS feeds that have a podcast_index_id will be saved to the database.
@@ -49,12 +51,6 @@ export const getAndParseRSSFeed = async (url: string) => {
 
   return parsedFeed;
 };
-
-// export const parseRSSAddByRSSFeed = async (url: string) => {
-//   const parsedFeed = await getAndParseRSSFeed(url);
-//   const compatData = convertParsedRSSFeedToCompat(parsedFeed);
-//   return compatData;
-// };
 
 export type ParseRSSOnDemandParserEvent = {
   accountId: number | null;
@@ -150,26 +146,18 @@ export const parseRSSFeedAndSaveToDatabase = async (
     loggerService.info(`item count: ${parsedFeed.items.length}`);
 
     const newItemIdentifiers: HandleParsedItemsResult = await handleParsedItems(parsedFeed.items, channel, channelSeasonIndex);
-    let newLiveItemIdentifiers: HandleParsedLiveItemsResult = { newItemGuids: [] };
+    let newLiveItemIdentifiers: HandleParsedLiveItemsResult = { pendingItemGuids: [], liveItemGuids: [] };
 
     if (parsedFeed.podcastLiveItems) {
       newLiveItemIdentifiers = await handleParsedLiveItems(parsedFeed.podcastLiveItems, channel, channelSeasonIndex);
     }
 
-    if (newItemIdentifiers.newItemGuids.length > 0 || newLiveItemIdentifiers.newItemGuids.length > 0) {
-      // const firebaseAccessTokenService = firebaseAccessTokenServiceFactory();
-      // const googleAuthToken = await firebaseAccessTokenService.generateAccessToken();
-      // const notificationsService = NotificationsServiceFactory(googleAuthToken);
-      // const accountFCMDeviceService = new AccountFCMDeviceService();
-      // const itemService = new ItemService();
-      
-      // if (newItemIdentifiers.newItemGuids.length > 0) {
-      //   await handleNewItemsNotifications(newItemIdentifiers, channel, notificationsService, accountFCMDeviceService, itemService);
-      // }
-
-      // if (newLiveItemIdentifiers.newItemGuids.length > 0) {
-      //   await handleNewLiveItemsNotifications(newLiveItemIdentifiers, channel, notificationsService, accountFCMDeviceService, itemService);
-      // }
+    if (newItemIdentifiers.newItemGuids.length > 0 || newItemIdentifiers.newItemGuidEnclosureUrls.length > 0) {
+      await handleNewItemNotifications(channel, newItemIdentifiers);
+    }
+    
+    if (newLiveItemIdentifiers.pendingItemGuids.length > 0 || newLiveItemIdentifiers.liveItemGuids.length > 0) {
+      await handleNewLiveItemNotifications(channel, newLiveItemIdentifiers);
     }
 
     const feedLogService = new FeedLogService();
