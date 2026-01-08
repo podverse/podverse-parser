@@ -260,7 +260,7 @@ export async function sendItemNotifications(
   upSubscriptions: Map<string, UPSubscription[]>
 ): Promise<void> {
   for (const itemNotification of itemNotifications) {
-    const messageText = `${itemNotification.channelTitle} - ${itemNotification.itemTitle}`;
+    const messageText = itemNotification.itemTitle;
 
     // Send to FCM devices
     for (const [locale, platformMap] of groupedDevices) {
@@ -273,7 +273,8 @@ export async function sendItemNotifications(
             messageType: itemNotification.messageType,
             locale,
             platform,
-            icon: itemNotification.imageUrl || undefined,
+            body: itemNotification.channelTitle,
+            image: itemNotification.imageUrl || undefined,
             linkIdText: itemNotification.itemIdText,
             mediumId: itemNotification.mediumId,
             data: {
@@ -305,7 +306,8 @@ export async function sendItemNotifications(
             messageText,
             messageType: itemNotification.messageType,
             locale,
-            icon: itemNotification.imageUrl || undefined,
+            body: itemNotification.channelTitle,
+            image: itemNotification.imageUrl || undefined,
             linkIdText: itemNotification.itemIdText,
             mediumId: itemNotification.mediumId,
             data: {
@@ -337,7 +339,8 @@ export async function sendItemNotifications(
             messageText,
             messageType: itemNotification.messageType,
             locale,
-            icon: itemNotification.imageUrl || undefined,
+            body: itemNotification.channelTitle,
+            image: itemNotification.imageUrl || undefined,
             linkIdText: itemNotification.itemIdText,
             mediumId: itemNotification.mediumId,
             data: {
