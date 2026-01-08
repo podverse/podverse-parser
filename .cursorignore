@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Lock files (large, not needed for code understanding)
+package-lock.json
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+*.tsbuildinfo
