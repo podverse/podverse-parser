@@ -1,6 +1,6 @@
 import { AccountNotificationTypeEnum, MediumEnum } from 'podverse-helpers';
 import { Channel, ChannelImage, ItemService } from 'podverse-orm';
-import { NotificationMessageType } from 'podverse-external-services';
+import { NotificationMessageType } from 'podverse-notifications';
 import { HandleParsedItemsResult } from '@parser/lib/rss/item/item';
 import { loggerService } from '@parser/factories/loggerService';
 import {
@@ -65,7 +65,7 @@ export async function handleNewItemNotifications(
       return;
     }
 
-    const { devices: allDevices } = devicesResult;
+    const { devices: allDevices, webPushSubscriptions } = devicesResult;
 
     // Get the items to send notifications for using batch queries
     const itemService = new ItemService();
@@ -121,8 +121,9 @@ export async function handleNewItemNotifications(
     const groupedDevices = groupDevicesByLocaleAndPlatform(allDevices);
 
     // Send notifications
-    await sendItemNotifications(itemNotifications, groupedDevices);
+    await sendItemNotifications(itemNotifications, groupedDevices, webPushSubscriptions);
   } catch (error) {
     loggerService.logError('handleNewItemNotifications', error as Error);
+    loggerService.logError(`handleNewItemNotifications: Error details - Channel: ${channel.id_text}, Error: ${(error as Error).message}`, error as Error);
   }
 }

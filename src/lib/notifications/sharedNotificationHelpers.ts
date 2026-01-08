@@ -3,13 +3,15 @@ import {
   AccountFCMDeviceService,
   AccountNotificationChannelService,
   AccountNotificationChannelType,
+  AccountWebPushDeviceService,
   Channel,
   ChannelImage,
   ChannelService,
   Item
 } from 'podverse-orm';
-import { NotificationMessageType, notificationOrchestrator, NotificationPlatform } from 'podverse-external-services';
+import { NotificationMessageType, NotificationPlatform, notificationOrchestrator, WebPushSubscription } from 'podverse-notifications';
 import { loggerService } from '@parser/factories/loggerService';
+import { config as projectConfig } from '@parser/config';
 
 export type DeviceWithLocale = {
   fcm_token: string;
@@ -102,9 +104,8 @@ export function convertPlatform(platform: AccountFCMDevicePlatformEnum): Notific
     return 'android';
   case AccountFCMDevicePlatformEnum.iOS:
     return 'ios';
-  case AccountFCMDevicePlatformEnum.Generic:
   default:
-    return 'generic';
+    return 'web';
   }
 }
 
@@ -150,7 +151,7 @@ export async function loadChannelImages(channel: Channel): Promise<ChannelImage[
 export async function getDevicesForNotificationType(
   channelIdText: string,
   notificationType: AccountNotificationTypeEnum
-): Promise<{ devices: DeviceWithLocale[]; accountLocaleMap: Map<number, string> } | null> {
+): Promise<{ devices: DeviceWithLocale[]; webPushSubscriptions: Map<string, WebPushSubscription[]>; accountLocaleMap: Map<number, string> } | null> {
   // Get all account notification channels for this channel with their types
   const accountNotificationChannelService = new AccountNotificationChannelService();
   const notificationChannels = await accountNotificationChannelService.getAllByChannelIdText(
@@ -180,7 +181,7 @@ export async function getDevicesForNotificationType(
       accountIdsWithTypeEnabled.push(notificationChannel.account_id);
       
       // Store the locale for each account
-      const locale = notificationChannel.account?.account_settings?.account_settings_locale?.locale || 'en-US';
+      const locale = notificationChannel.account?.account_settings?.account_settings_locale?.locale || projectConfig.defaults.account.settings.locale;
       accountLocaleMap.set(notificationChannel.account_id, locale);
     }
   }
@@ -194,20 +195,40 @@ export async function getDevicesForNotificationType(
   const accountFCMDeviceService = new AccountFCMDeviceService();
   const deviceResults = await accountFCMDeviceService.getAllForAccountIds(accountIdsWithTypeEnabled);
 
-  // Early return if no devices to send to
-  if (deviceResults.length === 0) {
+  // Get all Web Push devices for the filtered account IDs in a single batch query
+  const accountWebPushDeviceService = new AccountWebPushDeviceService();
+  const webPushDeviceResults = await accountWebPushDeviceService.getAllForAccountIds(accountIdsWithTypeEnabled);
+
+  // Early return if no devices to send to (neither FCM nor Web Push)
+  if (deviceResults.length === 0 && webPushDeviceResults.length === 0) {
     return null;
   }
 
-  // Map devices to DeviceWithLocale format
+  // Map FCM devices to DeviceWithLocale format
   const devices: DeviceWithLocale[] = deviceResults.map(device => ({
     fcm_token: device.fcm_token,
     platform: convertPlatform(device.platform),
-    locale: device.locale || accountLocaleMap.get(device.account_id) || 'en-US',
+    locale: device.locale || accountLocaleMap.get(device.account_id) || projectConfig.defaults.account.settings.locale,
     account_id: device.account_id
   }));
 
-  return { devices, accountLocaleMap };
+  // Map Web Push devices to WebPushSubscription format, grouped by locale
+  const webPushSubscriptions = new Map<string, WebPushSubscription[]>();
+  for (const device of webPushDeviceResults) {
+    const locale = device.locale || accountLocaleMap.get(device.account_id) || 'en-US';
+    if (!webPushSubscriptions.has(locale)) {
+      webPushSubscriptions.set(locale, []);
+    }
+    webPushSubscriptions.get(locale)!.push({
+      endpoint: device.endpoint,
+      keys: {
+        p256dh: device.p256dh,
+        auth: device.auth
+      }
+    });
+  }
+
+  return { devices, webPushSubscriptions, accountLocaleMap };
 }
 
 /**
@@ -215,11 +236,13 @@ export async function getDevicesForNotificationType(
  */
 export async function sendItemNotifications(
   itemNotifications: ItemNotificationData[],
-  groupedDevices: Map<string, Map<NotificationPlatform, string[]>>
+  groupedDevices: Map<string, Map<NotificationPlatform, string[]>>,
+  webPushSubscriptions: Map<string, WebPushSubscription[]>
 ): Promise<void> {
   for (const itemNotification of itemNotifications) {
     const messageText = `${itemNotification.channelTitle} - ${itemNotification.itemTitle}`;
 
+    // Send to FCM devices
     for (const [locale, platformMap] of groupedDevices) {
       for (const [platform, tokens] of platformMap) {
         try {
@@ -245,6 +268,37 @@ export async function sendItemNotifications(
         } catch (error) {
           loggerService.logError(
             `Failed to send notification for item ${itemNotification.itemIdText} to ${platform} devices (${locale})`,
+            error as Error
+          );
+        }
+      }
+    }
+
+    // Send to Web Push subscriptions
+    for (const [locale, subscriptions] of webPushSubscriptions) {
+      if (subscriptions.length > 0) {
+        try {
+          await notificationOrchestrator({
+            service: 'webpush',
+            subscriptions,
+            messageText,
+            messageType: itemNotification.messageType,
+            locale,
+            icon: itemNotification.imageUrl || undefined,
+            linkIdText: itemNotification.itemIdText,
+            data: {
+              itemIdText: itemNotification.itemIdText,
+              channelIdText: itemNotification.channelIdText,
+              type: itemNotification.messageType
+            }
+          });
+
+          loggerService.info(
+            `Sent ${itemNotification.messageType} Web Push notification to ${subscriptions.length} subscription(s) (${locale}) for item: ${itemNotification.itemIdText}`
+          );
+        } catch (error) {
+          loggerService.logError(
+            `Failed to send Web Push notification for item ${itemNotification.itemIdText} to ${subscriptions.length} subscription(s) (${locale})`,
             error as Error
           );
         }

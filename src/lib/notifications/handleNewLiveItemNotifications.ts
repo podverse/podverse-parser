@@ -1,6 +1,6 @@
 import { AccountNotificationTypeEnum } from 'podverse-helpers';
 import { Channel, ChannelImage, ItemService } from 'podverse-orm';
-import { NotificationMessageType } from 'podverse-external-services';
+import { NotificationMessageType } from 'podverse-notifications';
 import { HandleParsedLiveItemsResult } from '@parser/lib/rss/liveItem/liveItem';
 import { loggerService } from '@parser/factories/loggerService';
 import {
@@ -78,7 +78,7 @@ async function sendLiveItemNotificationsForStatus(
     return;
   }
 
-  const { devices: allDevices } = devicesResult;
+  const { devices: allDevices, webPushSubscriptions } = devicesResult;
 
   // Get the items to send notifications for using batch queries
   const itemService = new ItemService();
@@ -119,5 +119,5 @@ async function sendLiveItemNotificationsForStatus(
   const groupedDevices = groupDevicesByLocaleAndPlatform(allDevices);
 
   // Send notifications
-  await sendItemNotifications(itemNotifications, groupedDevices);
+  await sendItemNotifications(itemNotifications, groupedDevices, webPushSubscriptions);
 }

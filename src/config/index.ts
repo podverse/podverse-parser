@@ -16,5 +16,12 @@ export const config = {
   },
   parser: {
     addRemoteItemsToMQ: process.env.PARSER_ADD_REMOTE_ITEMS_TO_MQ === 'true',
+  },
+  defaults: {
+    account: {
+      settings: {
+        locale: process.env.DEFAULT_ACCOUNT_SETTINGS_LOCALE || 'en-US',
+      }
+    }
   }
 };
