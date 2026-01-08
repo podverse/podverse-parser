@@ -28,6 +28,7 @@ export type ItemNotificationData = {
   itemIdText: string;
   channelIdText: string;
   messageType: NotificationMessageType;
+  mediumId: number;  // For constructing medium-specific links (e.g., /podcast/livestream vs /music/livestream)
 };
 
 // Minimum acceptable image size for notifications (in pixels)
@@ -274,6 +275,7 @@ export async function sendItemNotifications(
             platform,
             icon: itemNotification.imageUrl || undefined,
             linkIdText: itemNotification.itemIdText,
+            mediumId: itemNotification.mediumId,
             data: {
               itemIdText: itemNotification.itemIdText,
               channelIdText: itemNotification.channelIdText,
@@ -305,6 +307,7 @@ export async function sendItemNotifications(
             locale,
             icon: itemNotification.imageUrl || undefined,
             linkIdText: itemNotification.itemIdText,
+            mediumId: itemNotification.mediumId,
             data: {
               itemIdText: itemNotification.itemIdText,
               channelIdText: itemNotification.channelIdText,
@@ -336,6 +339,7 @@ export async function sendItemNotifications(
             locale,
             icon: itemNotification.imageUrl || undefined,
             linkIdText: itemNotification.itemIdText,
+            mediumId: itemNotification.mediumId,
             data: {
               itemIdText: itemNotification.itemIdText,
               channelIdText: itemNotification.channelIdText,

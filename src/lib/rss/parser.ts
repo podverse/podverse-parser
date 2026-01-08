@@ -127,6 +127,7 @@ export const parseRSSFeedAndSaveToDatabase = async (
 
     parsedFeed = await handleRequestRSSFeed(feed);
     feed = await handleParsedFeed(parsedFeed, feed, options);
+    // A race condition is possible. Save "is_parsing" state to valkey instead?
     await feedService.update(feed.id, { is_parsing: new Date() });
     
     if (checkIfSpamFeed(parsedFeed)) {

@@ -112,7 +112,8 @@ async function sendLiveItemNotificationsForStatus(
     imageUrl: getBestImageUrl(item, channelImages),
     itemIdText: item.id_text,
     channelIdText: channel.id_text,
-    messageType
+    messageType,
+    mediumId: channel.medium_id
   }));
 
   // Group devices by locale and platform
