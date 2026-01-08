@@ -4,12 +4,13 @@ import {
   AccountNotificationChannelService,
   AccountNotificationChannelType,
   AccountWebPushDeviceService,
+  AccountUPDeviceService,
   Channel,
   ChannelImage,
   ChannelService,
   Item
 } from 'podverse-orm';
-import { NotificationMessageType, NotificationPlatform, notificationOrchestrator, WebPushSubscription } from 'podverse-notifications';
+import { NotificationMessageType, NotificationPlatform, notificationOrchestrator, WebPushSubscription, UPSubscription } from 'podverse-notifications';
 import { loggerService } from '@parser/factories/loggerService';
 import { config as projectConfig } from '@parser/config';
 
@@ -151,7 +152,7 @@ export async function loadChannelImages(channel: Channel): Promise<ChannelImage[
 export async function getDevicesForNotificationType(
   channelIdText: string,
   notificationType: AccountNotificationTypeEnum
-): Promise<{ devices: DeviceWithLocale[]; webPushSubscriptions: Map<string, WebPushSubscription[]>; accountLocaleMap: Map<number, string> } | null> {
+): Promise<{ devices: DeviceWithLocale[]; webPushSubscriptions: Map<string, WebPushSubscription[]>; upSubscriptions: Map<string, UPSubscription[]>; accountLocaleMap: Map<number, string> } | null> {
   // Get all account notification channels for this channel with their types
   const accountNotificationChannelService = new AccountNotificationChannelService();
   const notificationChannels = await accountNotificationChannelService.getAllByChannelIdText(
@@ -199,8 +200,12 @@ export async function getDevicesForNotificationType(
   const accountWebPushDeviceService = new AccountWebPushDeviceService();
   const webPushDeviceResults = await accountWebPushDeviceService.getAllForAccountIds(accountIdsWithTypeEnabled);
 
-  // Early return if no devices to send to (neither FCM nor Web Push)
-  if (deviceResults.length === 0 && webPushDeviceResults.length === 0) {
+  // Get all Unified Push devices for the filtered account IDs in a single batch query
+  const accountUPDeviceService = new AccountUPDeviceService();
+  const upDeviceResults = await accountUPDeviceService.getAllForAccountIds(accountIdsWithTypeEnabled);
+
+  // Early return if no devices to send to (FCM, Web Push, or UP)
+  if (deviceResults.length === 0 && webPushDeviceResults.length === 0 && upDeviceResults.length === 0) {
     return null;
   }
 
@@ -228,7 +233,20 @@ export async function getDevicesForNotificationType(
     });
   }
 
-  return { devices, webPushSubscriptions, accountLocaleMap };
+  // Map UP devices to UPSubscription format, grouped by locale
+  const upSubscriptions = new Map<string, UPSubscription[]>();
+  for (const device of upDeviceResults) {
+    const locale = device.locale || accountLocaleMap.get(device.account_id) || 'en-US';
+    if (!upSubscriptions.has(locale)) {
+      upSubscriptions.set(locale, []);
+    }
+    upSubscriptions.get(locale)!.push({
+      up_endpoint: device.up_endpoint,
+      up_auth_key: device.up_auth_key
+    });
+  }
+
+  return { devices, webPushSubscriptions, upSubscriptions, accountLocaleMap };
 }
 
 /**
@@ -237,7 +255,8 @@ export async function getDevicesForNotificationType(
 export async function sendItemNotifications(
   itemNotifications: ItemNotificationData[],
   groupedDevices: Map<string, Map<NotificationPlatform, string[]>>,
-  webPushSubscriptions: Map<string, WebPushSubscription[]>
+  webPushSubscriptions: Map<string, WebPushSubscription[]>,
+  upSubscriptions: Map<string, UPSubscription[]>
 ): Promise<void> {
   for (const itemNotification of itemNotifications) {
     const messageText = `${itemNotification.channelTitle} - ${itemNotification.itemTitle}`;
@@ -299,6 +318,37 @@ export async function sendItemNotifications(
         } catch (error) {
           loggerService.logError(
             `Failed to send Web Push notification for item ${itemNotification.itemIdText} to ${subscriptions.length} subscription(s) (${locale})`,
+            error as Error
+          );
+        }
+      }
+    }
+
+    // Send to Unified Push subscriptions
+    for (const [locale, subscriptions] of upSubscriptions) {
+      if (subscriptions.length > 0) {
+        try {
+          await notificationOrchestrator({
+            service: 'unifiedpush',
+            subscriptions,
+            messageText,
+            messageType: itemNotification.messageType,
+            locale,
+            icon: itemNotification.imageUrl || undefined,
+            linkIdText: itemNotification.itemIdText,
+            data: {
+              itemIdText: itemNotification.itemIdText,
+              channelIdText: itemNotification.channelIdText,
+              type: itemNotification.messageType
+            }
+          });
+
+          loggerService.info(
+            `Sent ${itemNotification.messageType} Unified Push notification to ${subscriptions.length} subscription(s) (${locale}) for item: ${itemNotification.itemIdText}`
+          );
+        } catch (error) {
+          loggerService.logError(
+            `Failed to send Unified Push notification for item ${itemNotification.itemIdText} to ${subscriptions.length} subscription(s) (${locale})`,
             error as Error
           );
         }

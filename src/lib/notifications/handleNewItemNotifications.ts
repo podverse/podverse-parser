@@ -65,7 +65,7 @@ export async function handleNewItemNotifications(
       return;
     }
 
-    const { devices: allDevices, webPushSubscriptions } = devicesResult;
+    const { devices: allDevices, webPushSubscriptions, upSubscriptions } = devicesResult;
 
     // Get the items to send notifications for using batch queries
     const itemService = new ItemService();
@@ -121,7 +121,7 @@ export async function handleNewItemNotifications(
     const groupedDevices = groupDevicesByLocaleAndPlatform(allDevices);
 
     // Send notifications
-    await sendItemNotifications(itemNotifications, groupedDevices, webPushSubscriptions);
+    await sendItemNotifications(itemNotifications, groupedDevices, webPushSubscriptions, upSubscriptions);
   } catch (error) {
     loggerService.logError('handleNewItemNotifications', error as Error);
     loggerService.logError(`handleNewItemNotifications: Error details - Channel: ${channel.id_text}, Error: ${(error as Error).message}`, error as Error);

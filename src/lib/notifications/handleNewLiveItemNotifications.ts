@@ -78,7 +78,7 @@ async function sendLiveItemNotificationsForStatus(
     return;
   }
 
-  const { devices: allDevices, webPushSubscriptions } = devicesResult;
+  const { devices: allDevices, webPushSubscriptions, upSubscriptions } = devicesResult;
 
   // Get the items to send notifications for using batch queries
   const itemService = new ItemService();
@@ -119,5 +119,5 @@ async function sendLiveItemNotificationsForStatus(
   const groupedDevices = groupDevicesByLocaleAndPlatform(allDevices);
 
   // Send notifications
-  await sendItemNotifications(itemNotifications, groupedDevices, webPushSubscriptions);
+  await sendItemNotifications(itemNotifications, groupedDevices, webPushSubscriptions, upSubscriptions);
 }
