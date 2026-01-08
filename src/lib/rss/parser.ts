@@ -165,6 +165,8 @@ export const parseRSSFeedAndSaveToDatabase = async (
   } catch (error) {
     if (error instanceof FeedIsParsingError) {
       loggerService.warn(`Feed ${feed?.id} is already parsing.`);
+      // return so the is_parsing flag is not reset
+      return;
     } else if (error instanceof FeedNoChangesSinceLastParsedError) {
       loggerService.warn(`Feed ${feed?.id} has no changes since last parsed.`);
     } else {
