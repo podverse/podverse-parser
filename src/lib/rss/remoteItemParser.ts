@@ -15,6 +15,7 @@ import {
 import { podcastIndexService } from '@parser/factories/podcastIndex';
 import type { ParseRSSFeedAndSaveToDatabaseOptions } from '@parser/lib/rss/parser';
 import { loggerService } from "@parser/factories/loggerService";
+import { config } from '@parser/config';
 
 type PIFeedWithPodcastGuidData = {
   id: number;
@@ -51,7 +52,7 @@ const handleRemoteItemsFeedParsing = async (feedGuidsToParse: string[], params: 
     const pvExistingFeed = await feedService.getByPodcastGuid(feedGuid);
 
     if (!pvExistingFeed) {
-      const piFeedDataResponse = await podcastIndexService.podcastGetByGuid(feedGuid);
+      const piFeedDataResponse = await podcastIndexService.podcastGetByGuid(feedGuid, config.podcastIndex.rateLimitDelay);
       if (piFeedDataResponse?.feed?.id && piFeedDataResponse?.feed?.url) {
         const piFeedData: PIFeedWithPodcastGuidData = {
           id: piFeedDataResponse.feed.id,

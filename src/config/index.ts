@@ -12,7 +12,8 @@ export const config = {
   podcastIndex: {
     authKey: process.env.PODCAST_INDEX_AUTH_KEY || '',
     baseUrl: process.env.PODCAST_INDEX_BASE_URL || '',
-    secretKey: process.env.PODCAST_INDEX_SECRET_KEY || ''
+    secretKey: process.env.PODCAST_INDEX_SECRET_KEY || '',
+    rateLimitDelay: parseInt(process.env.PODCAST_INDEX_API_RATE_LIMIT_DELAY || '200', 10)
   },
   parser: {
     addRemoteItemsToMQ: process.env.PARSER_ADD_REMOTE_ITEMS_TO_MQ === 'true',
