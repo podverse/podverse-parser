@@ -1,4 +1,4 @@
-import { AccountFCMDevicePlatformEnum, AccountNotificationTypeEnum } from 'podverse-helpers';
+import { AccountFCMDevicePlatformEnum, AccountNotificationTypeEnum, hasValidMembership } from 'podverse-helpers';
 import {
   AccountFCMDeviceService,
   AccountNotificationChannelService,
@@ -164,7 +164,8 @@ export async function getDevicesForNotificationType(
         account: {
           account_settings: {
             account_settings_locale: true
-          }
+          },
+          account_membership_status: true
         }
       }
     }
@@ -180,11 +181,16 @@ export async function getDevicesForNotificationType(
     );
 
     if (hasType) {
-      accountIdsWithTypeEnabled.push(notificationChannel.account_id);
+      // Check if account has a valid, non-expired membership
+      const membershipStatus = notificationChannel.account?.account_membership_status;
       
-      // Store the locale for each account
-      const locale = notificationChannel.account?.account_settings?.account_settings_locale?.locale || projectConfig.defaults.account.settings.locale;
-      accountLocaleMap.set(notificationChannel.account_id, locale);
+      if (hasValidMembership(membershipStatus)) {
+        accountIdsWithTypeEnabled.push(notificationChannel.account_id);
+        
+        // Store the locale for each account
+        const locale = notificationChannel.account?.account_settings?.account_settings_locale?.locale || projectConfig.defaults.account.settings.locale;
+        accountLocaleMap.set(notificationChannel.account_id, locale);
+      }
     }
   }
 
