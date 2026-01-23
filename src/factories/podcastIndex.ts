@@ -1,12 +1,15 @@
+// Re-export podcastIndexService from context for backwards compatibility
+import { getPodcastIndexService } from '../context';
 
-import { PodcastIndexService } from 'podverse-external-services';
-import { loggerService } from './loggerService';
-import { config } from '../config';
-
-export const podcastIndexService = new PodcastIndexService({
-  userAgent: config.userAgent,
-  authKey: config.podcastIndex.authKey,
-  baseUrl: config.podcastIndex.baseUrl,
-  secretKey: config.podcastIndex.secretKey,
-  loggerService
+// Export a proxy object that delegates to the context's podcast index service
+export const podcastIndexService = new Proxy({} as ReturnType<typeof getPodcastIndexService>, {
+  get(_target, prop) {
+    const service = getPodcastIndexService();
+    const value = service[prop as keyof typeof service];
+    // If it's a function, bind it to the service instance
+    if (typeof value === 'function') {
+      return value.bind(service);
+    }
+    return value;
+  }
 });

@@ -13,6 +13,7 @@ import {
 import { NotificationMessageType, NotificationPlatform, notificationOrchestrator, WebPushSubscription, UPSubscription } from 'podverse-notifications';
 import { loggerService } from '@parser/factories/loggerService';
 import { config as projectConfig } from '@parser/config';
+import { getNotificationsContext, getFirebaseContext } from '@parser/context';
 
 export type DeviceWithLocale = {
   fcm_token: string;
@@ -268,12 +269,16 @@ export async function sendItemNotifications(
   for (const itemNotification of itemNotifications) {
     const messageText = itemNotification.itemTitle;
 
+    const notificationsCtx = getNotificationsContext();
+    const firebaseCtx = getFirebaseContext();
+
     // Send to FCM devices
     for (const [locale, platformMap] of groupedDevices) {
       for (const [platform, tokens] of platformMap) {
         try {
-          await notificationOrchestrator({
+          await notificationOrchestrator(notificationsCtx, {
             service: 'firebase',
+            firebaseCtx,
             tokens,
             messageText,
             messageType: itemNotification.messageType,
@@ -306,7 +311,7 @@ export async function sendItemNotifications(
     for (const [locale, subscriptions] of webPushSubscriptions) {
       if (subscriptions.length > 0) {
         try {
-          await notificationOrchestrator({
+          await notificationOrchestrator(notificationsCtx, {
             service: 'webpush',
             subscriptions,
             messageText,
@@ -339,7 +344,7 @@ export async function sendItemNotifications(
     for (const [locale, subscriptions] of upSubscriptions) {
       if (subscriptions.length > 0) {
         try {
-          await notificationOrchestrator({
+          await notificationOrchestrator(notificationsCtx, {
             service: 'unifiedpush',
             subscriptions,
             messageText,
